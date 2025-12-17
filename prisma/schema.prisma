@@ -37,13 +37,15 @@ model Address {
 }
 
 model User {
-  id             Int     @id @default(autoincrement()) @map("User_ID")
-  addressId      Int?    @map("Address_ID")
-  name           String  @map("Name")
-  phoneNumber    String  @map("Phone_Number")
-  profilePicture String? @map("Profile_Picture")
-  isDriver       Boolean @default(false) @map("Is_Driver")
-  isPassenger    Boolean @default(false) @map("Is_Passenger")
+  id             Int      @id @default(autoincrement()) @map("User_ID")
+  addressId      Int?     @map("Address_ID")
+  name           String   @map("Name")
+  phoneNumber    String   @map("Phone_Number")
+  profilePicture String?  @map("Profile_Picture")
+  isDriver       Boolean  @default(false) @map("Is_Driver")
+  isPassenger    Boolean  @default(false) @map("Is_Passenger")
+  createdAt      DateTime @default(now()) @map("Created_At")
+  lastUpdated    DateTime @updatedAt @map("Last_Updated")
 
   // Relations
   address     Address?      @relation("UserAddress", fields: [addressId], references: [id])
@@ -119,6 +121,7 @@ model DriverBooking {
   eventId        Int     @map("Event_ID")
   carId          Int     @map("Car_ID")
   availableSeats Int     @map("Available_Seats")
+  isReturning    Boolean @default(false) @map("Is_Returning")
   notes          String? @map("Notes") @db.Text
 
   // Relations
@@ -142,9 +145,10 @@ model Pickup {
 }
 
 model PassengerAllocation {
-  driverBookingId Int @map("Driver_Booking_ID")
-  passengerId     Int @map("Passenger_ID")
-  pickupId        Int @map("Pickup_ID")
+  driverBookingId Int     @map("Driver_Booking_ID")
+  passengerId     Int     @map("Passenger_ID")
+  pickupId        Int     @map("Pickup_ID")
+  isReturning     Boolean @default(false) @map("Is_Returning")
 
   // Relations
   booking   DriverBooking @relation(fields: [driverBookingId], references: [id], onDelete: Cascade)

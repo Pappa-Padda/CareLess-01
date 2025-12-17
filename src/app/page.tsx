@@ -4,14 +4,15 @@ import { useState, useEffect } from 'react';
 
 type User = {
   id: number;
-  email: string;
+  phoneNumber: string;
   name: string | null;
   createdAt: string;
+  lastUpdated: string;
 };
 
 export default function Home() {
   const [users, setUsers] = useState<User[]>([]);
-  const [email, setEmail] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [name, setName] = useState('');
 
   // Fetch users from the backend API
@@ -23,19 +24,19 @@ export default function Home() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) return;
+    if (!phoneNumber) return;
 
     // Send data to the backend API
     const res = await fetch('/users', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, name }),
+      body: JSON.stringify({ phoneNumber, name }),
     });
 
     if (res.ok) {
       const newUser = await res.json();
       setUsers([...users, newUser]);
-      setEmail('');
+      setPhoneNumber('');
       setName('');
     }
   };
@@ -47,10 +48,10 @@ export default function Home() {
       {/* Form to add user */}
       <form onSubmit={handleSubmit} className="flex flex-col gap-4 mb-12 w-full max-w-md">
         <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          type="tel"
+          placeholder="Phone Number"
+          value={phoneNumber}
+          onChange={(e) => setPhoneNumber(e.target.value)}
           className="p-2 border rounded dark:bg-zinc-800 dark:border-zinc-700"
           required
         />
@@ -79,7 +80,11 @@ export default function Home() {
               className="p-4 border rounded shadow-sm dark:bg-zinc-800 dark:border-zinc-700"
             >
               <p className="font-bold">{user.name || 'Unnamed'}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{user.email}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{user.phoneNumber}</p>
+              <div className="text-xs text-gray-400 mt-2">
+                <p>Created: {new Date(user.createdAt).toLocaleString()}</p>
+                <p>Updated: {new Date(user.lastUpdated).toLocaleString()}</p>
+              </div>
             </li>
           ))}
           {users.length === 0 && <p className="text-gray-500">No users found.</p>}
