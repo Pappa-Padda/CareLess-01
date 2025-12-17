@@ -1,4 +1,11 @@
-/** @type {import('next').NextConfig} */
+import type { NextConfig } from 'next'
+ 
+const nextConfig: NextConfig = {
+  turbopack: {
+    // ...
+  },
+}
+
 const withPWA = require("@ducanh2912/next-pwa").default({
   dest: "public", // The folder where service worker files will be generated
   cacheOnFrontEndNav: true,
@@ -11,8 +18,4 @@ const withPWA = require("@ducanh2912/next-pwa").default({
   },
 });
 
-const nextConfig = {
-  // Your existing config here (if any)
-};
-
-module.exports = withPWA(nextConfig);
+export default withPWA(nextConfig);
