@@ -30,7 +30,6 @@ model Address {
   longitude  Decimal? @map("Longitude") @db.Decimal(11, 8)
 
   // Relations
-  users        User[]        @relation("UserAddress")
   addressLists AddressList[]
   events       Event[]
   pickups      Pickup[]
@@ -38,7 +37,6 @@ model Address {
 
 model User {
   id             Int      @id @default(autoincrement()) @map("User_ID")
-  addressId      Int?     @map("Address_ID")
   name           String   @map("Name")
   phoneNumber    String   @map("Phone_Number")
   profilePicture String?  @map("Profile_Picture")
@@ -48,10 +46,11 @@ model User {
   lastUpdated    DateTime @updatedAt @map("Last_Updated")
 
   // Relations
-  address     Address?      @relation("UserAddress", fields: [addressId], references: [id])
+
   addressList AddressList[]
   driver      Driver?
   passenger   Passenger?
+  userGroupAssociation UserGroupAssociation[]
 }
 
 model AddressList {
@@ -87,6 +86,33 @@ model Passenger {
   allocations PassengerAllocation[]
 }
 
+model Group {
+  id           Int        @id @default(autoincrement()) @map("Group_ID")
+  name         String     @map("Name")
+  description  String?    @map("Description") @db.Text
+  profilePicture String?  @map("Profile_Picture")
+  createdAt      DateTime @default(now()) @map("Created_At")
+  lastUpdated    DateTime @updatedAt @map("Last_Updated")
+
+  // Relations
+  userGroupAssociation UserGroupAssociation[]
+  events               Event[]
+}
+
+model UserGroupAssociation {
+  userId Int @map("User_ID")
+  groupId Int @map("Group_ID")
+  isAdmin Boolean @default(false) @map("Is_Admin")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  // Composite Primary Key for Many-to-Many
+  @@id([userId, groupId])
+  @@map("User_Group_Association")
+}
+
 model Car {
   id           Int    @id @default(autoincrement()) @map("Car_ID")
   driverId     Int    @map("Driver_ID")
@@ -104,6 +130,7 @@ model Car {
 model Event {
   id          Int      @id @default(autoincrement()) @map("Event_ID")
   addressId   Int      @map("Address_ID")
+  groupId     Int      @map("Group_ID")
   name        String   @map("Name")
   description String?  @map("Description") @db.Text
   date        DateTime @map("Date") @db.Date
@@ -112,6 +139,7 @@ model Event {
 
   // Relations
   address  Address         @relation(fields: [addressId], references: [id])
+  group    Group           @relation(fields: [groupId], references: [id])
   bookings DriverBooking[]
 }
 
