@@ -7,19 +7,151 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
+// 1. Database Configuration
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
 generator client {
   provider = "prisma-client-js"
 }
 
-datasource db {
-  provider = "mysql"       // 
-  url      = env("DATABASE_URL")
+// 2. Models
+
+model Address {
+  id         Int      @id @default(autoincrement()) @map("Address_ID")
+  street     String   @map("Street")
+  city       String   @map("City")
+  province   String   @map("Province")
+  postalCode String   @map("Postal_Code")
+  country    String   @map("Country")
+  latitude   Decimal? @map("Latitude") @db.Decimal(10, 8)
+  longitude  Decimal? @map("Longitude") @db.Decimal(11, 8)
+
+  // Relations
+  users        User[]        @relation("UserAddress")
+  addressLists AddressList[]
+  events       Event[]
+  pickups      Pickup[]
 }
 
-// Define your models here. Example:
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
+  id             Int     @id @default(autoincrement()) @map("User_ID")
+  addressId      Int?    @map("Address_ID")
+  name           String  @map("Name")
+  phoneNumber    String  @map("Phone_Number")
+  profilePicture String? @map("Profile_Picture")
+  isDriver       Boolean @default(false) @map("Is_Driver")
+  isPassenger    Boolean @default(false) @map("Is_Passenger")
+
+  // Relations
+  address     Address?      @relation("UserAddress", fields: [addressId], references: [id])
+  addressList AddressList[]
+  driver      Driver?
+  passenger   Passenger?
+}
+
+model AddressList {
+  addressId Int @map("Address_ID")
+  userId    Int @map("User_ID")
+  rank      Int @default(1) @map("Rank")
+
+  // Relations
+  address Address @relation(fields: [addressId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Composite Primary Key for Many-to-Many
+  @@id([addressId, userId])
+  @@map("Address_List")
+}
+
+// 1:1 Relation with User (Inheritance Pattern)
+model Driver {
+  id Int @id @map("Driver_ID")
+
+  // Relations
+  user           User            @relation(fields: [id], references: [id], onDelete: Cascade)
+  cars           Car[]
+  driverBookings DriverBooking[]
+}
+
+// 1:1 Relation with User (Inheritance Pattern)
+model Passenger {
+  id Int @id @map("Passenger_ID")
+
+  // Relations
+  user        User                  @relation(fields: [id], references: [id], onDelete: Cascade)
+  allocations PassengerAllocation[]
+}
+
+model Car {
+  id           Int    @id @default(autoincrement()) @map("Car_ID")
+  driverId     Int    @map("Driver_ID")
+  make         String @map("Make")
+  model        String @map("Model")
+  year         Int    @map("Year")
+  licensePlate String @map("License_Plate")
+  seatCapacity Int    @map("Seat_Capacity")
+
+  // Relations
+  driver   Driver          @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  bookings DriverBooking[]
+}
+
+model Event {
+  id          Int      @id @default(autoincrement()) @map("Event_ID")
+  addressId   Int      @map("Address_ID")
+  name        String   @map("Name")
+  description String?  @map("Description") @db.Text
+  date        DateTime @map("Date") @db.Date
+  startTime   DateTime @map("Start_Time") @db.Time
+  endTime     DateTime @map("End_Time") @db.Time
+
+  // Relations
+  address  Address         @relation(fields: [addressId], references: [id])
+  bookings DriverBooking[]
+}
+
+model DriverBooking {
+  id             Int     @id @default(autoincrement()) @map("Driver_Booking_ID")
+  driverId       Int     @map("Driver_ID")
+  eventId        Int     @map("Event_ID")
+  carId          Int     @map("Car_ID")
+  availableSeats Int     @map("Available_Seats")
+  notes          String? @map("Notes") @db.Text
+
+  // Relations
+  driver      Driver                @relation(fields: [driverId], references: [id])
+  event       Event                 @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  car         Car                   @relation(fields: [carId], references: [id])
+  allocations PassengerAllocation[]
+
+  @@map("Driver_Booking")
+}
+
+model Pickup {
+  id             Int      @id @default(autoincrement()) @map("Pickup_ID")
+  addressId      Int      @map("Address_ID")
+  time           DateTime @map("Time") @db.Time
+  passengerCount Int      @default(1) @map("Passenger_Count")
+
+  // Relations
+  address     Address               @relation(fields: [addressId], references: [id])
+  allocations PassengerAllocation[]
+}
+
+model PassengerAllocation {
+  driverBookingId Int @map("Driver_Booking_ID")
+  passengerId     Int @map("Passenger_ID")
+  pickupId        Int @map("Pickup_ID")
+
+  // Relations
+  booking   DriverBooking @relation(fields: [driverBookingId], references: [id], onDelete: Cascade)
+  passenger Passenger     @relation(fields: [passengerId], references: [id], onDelete: Cascade)
+  pickup    Pickup        @relation(fields: [pickupId], references: [id])
+
+  // Composite Primary Key
+  @@id([driverBookingId, passengerId])
+  @@map("Passenger_Allocation")
 }

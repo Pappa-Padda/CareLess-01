@@ -31,6 +31,10 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 This project uses **MySQL** as its database provider.
 
+### Database Models
+
+In the `prisma/schema.prisma` file, you can find the database models.
+
 ### Managing the Database
 
 We use **Prisma** to manage the database schema.
