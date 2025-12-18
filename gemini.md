@@ -1,6 +1,10 @@
 # Project Overview
 
-This is a **Next.js** application configured as a PWA (Progressive Web App) using `@ducanh2912/next-pwa`. It uses **TypeScript** for type safety and **Prisma** as an ORM to interact with a **MySQL** database.
+This is a **Monorepo** containing a Next.js frontend and a separate Express.js API.
+- **Frontend**: Next.js (PWA) in `apps/web`.
+- **Backend**: Express.js API in `apps/api`.
+- **Database**: Prisma with MySQL in `packages/database`.
+- **Types**: Shared TypeScript types in `packages/types`.
 
 ## 🚀 Getting Started
 
@@ -13,60 +17,54 @@ This is a **Next.js** application configured as a PWA (Progressive Web App) usin
   DATABASE_URL="mysql://USER:PASSWORD@HOST:PORT/DATABASE"
   ```
 
+### Installation
+
+From the root directory, install all dependencies:
+```bash
+npm install
+```
+
 ### Development Server
 
-To start the development server, run:
+To start both the **Frontend** and the **API** simultaneously, run from the root:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+#### Individual Services
+
+If you want to run only one service:
+
+- **Web (Next.js)**: `npm run dev --workspace=web` (Runs on http://localhost:3000)
+- **API (Express)**: `npm run dev --workspace=api` (Runs on http://localhost:4000)
 
 ## 🗄️ Database
 
-This project uses **MySQL** as its database provider.
-
-### Database Models
-
-In the `prisma/schema.prisma` file, you can find the database models.
+This project uses **MySQL** as its database provider via Prisma, located in `packages/database`.
 
 ### Managing the Database
 
-We use **Prisma** to manage the database schema.
-
-- **Apply schema changes (Development):**
-  To create a migration and apply it to the database:
-  ```bash
-  npx prisma migrate dev
-  ```
+You should run these commands from the root using workspaces or by navigating to `packages/database`.
 
 - **Push schema (Prototyping):**
-  To push the schema state to the database without creating a migration file (useful for quick prototyping):
   ```bash
-  npx prisma db push
-  ```
-
-- **Open Prisma Studio:**
-  To view and edit your data in a GUI:
-  ```bash
-  npx prisma studio
+  npm run push --workspace=@repo/database
   ```
 
 - **Regenerate Prisma Client:**
-  If you make changes to `schema.prisma`, you may need to regenerate the client manually (though `postinstall` handles this often):
   ```bash
-  npx prisma generate
+  npm run generate --workspace=@repo/database
   ```
 
-## 🛠️ Scripts
+- **Open Prisma Studio:**
+  ```bash
+  cd packages/database
+  npx prisma studio
+  ```
 
-- `dev`: Runs the app in development mode.
-- `build`: Builds the app for production.
-- `start`: Starts the production server.
-- `lint`: Runs ESLint.
-- `postinstall`: Generates the Prisma Client.
+## 🛠️ Scripts (Root)
+
+- `dev`: Runs all apps in development mode.
+- `build`: Builds all apps and packages.
+- `lint`: Runs ESLint across all workspaces.
