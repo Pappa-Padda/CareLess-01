@@ -58,7 +58,7 @@ npm install
 
 ### Environment Variables
 
-We use a **single root `.env` file**. The `dotenv-cli` tool loads these variables into all workspaces during development.
+We use a **single root `.env` file**. The `env-cmd` tool loads these variables into all workspaces during development.
 
 Create a `.env` file in the root:
 
@@ -85,17 +85,22 @@ npm run dev
 
 ## 🗄️ Database Management
 
-The database logic is centralized in `@repo/database`. Run these commands from the **root directory**:
+The database logic is centralized in `@repo/database`.
 
-- **Push Schema** (Quickly sync schema with DB without migration files):
-  ```bash
-  npm run push --workspace=@repo/database
-  ```
+### Standard Workflow
 
-- **Generate Client** (Update TypeScript definitions after schema changes):
-  ```bash
-  npm run generate --workspace=@repo/database
-  ```
+1.  **Modify Schema:** Edit `packages/database/prisma/schema.prisma`.
+2.  **Push Changes:** Update your development database:
+    ```bash
+    npm run push --workspace=@repo/database
+    ```
+3.  **Generate Client:** Update the TypeScript client (automatically runs on install, but run this if you edit schema manually):
+    ```bash
+    npm run generate --workspace=@repo/database
+    ```
+
+### Deployment Note
+We have added a `postinstall` script to the root `package.json`. This means whenever you (or Render/Vercel) run `npm install`, the Prisma Client will be automatically generated. You do not need to add a custom build command for this.
 
 - **Open Prisma Studio** (GUI to view data):
   ```bash

@@ -13,6 +13,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist
 var _s = __turbopack_context__.k.signature();
 'use client';
 ;
+const API_URL = ("TURBOPACK compile-time value", "http://localhost:4000");
 function Home() {
     _s();
     const [users, setUsers] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])([]);
@@ -21,7 +22,7 @@ function Home() {
     // Fetch users from the backend API
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
         "Home.useEffect": ()=>{
-            fetch(`${("TURBOPACK compile-time value", "http://localhost:4000")}/users`).then({
+            fetch(`${API_URL}/users`).then({
                 "Home.useEffect": (res)=>res.json()
             }["Home.useEffect"]).then({
                 "Home.useEffect": (data)=>setUsers(data)
@@ -32,7 +33,7 @@ function Home() {
         e.preventDefault();
         if (!phoneNumber) return;
         // Send data to the backend API
-        const res = await fetch(`${("TURBOPACK compile-time value", "http://localhost:4000")}/users`, {
+        const res = await fetch(`${API_URL}/users`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -60,7 +61,7 @@ function Home() {
                 children: "User Management"
             }, void 0, false, {
                 fileName: "[project]/apps/web/src/app/page.tsx",
-                lineNumber: 46,
+                lineNumber: 47,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("form", {
@@ -76,7 +77,7 @@ function Home() {
                         required: true
                     }, void 0, false, {
                         fileName: "[project]/apps/web/src/app/page.tsx",
-                        lineNumber: 50,
+                        lineNumber: 51,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -87,7 +88,7 @@ function Home() {
                         className: "p-2 border rounded dark:bg-zinc-800 dark:border-zinc-700"
                     }, void 0, false, {
                         fileName: "[project]/apps/web/src/app/page.tsx",
-                        lineNumber: 58,
+                        lineNumber: 59,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -96,13 +97,13 @@ function Home() {
                         children: "Add User"
                     }, void 0, false, {
                         fileName: "[project]/apps/web/src/app/page.tsx",
-                        lineNumber: 65,
+                        lineNumber: 66,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/apps/web/src/app/page.tsx",
-                lineNumber: 49,
+                lineNumber: 50,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -113,7 +114,7 @@ function Home() {
                         children: "Current Users"
                     }, void 0, false, {
                         fileName: "[project]/apps/web/src/app/page.tsx",
-                        lineNumber: 75,
+                        lineNumber: 76,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("ul", {
@@ -127,7 +128,7 @@ function Home() {
                                             children: user.name || 'Unnamed'
                                         }, void 0, false, {
                                             fileName: "[project]/apps/web/src/app/page.tsx",
-                                            lineNumber: 82,
+                                            lineNumber: 83,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -135,7 +136,7 @@ function Home() {
                                             children: user.phoneNumber
                                         }, void 0, false, {
                                             fileName: "[project]/apps/web/src/app/page.tsx",
-                                            lineNumber: 83,
+                                            lineNumber: 84,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -148,7 +149,7 @@ function Home() {
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/apps/web/src/app/page.tsx",
-                                                    lineNumber: 85,
+                                                    lineNumber: 86,
                                                     columnNumber: 17
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -158,19 +159,19 @@ function Home() {
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/apps/web/src/app/page.tsx",
-                                                    lineNumber: 86,
+                                                    lineNumber: 87,
                                                     columnNumber: 17
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/apps/web/src/app/page.tsx",
-                                            lineNumber: 84,
+                                            lineNumber: 85,
                                             columnNumber: 15
                                         }, this)
                                     ]
                                 }, user.id, true, {
                                     fileName: "[project]/apps/web/src/app/page.tsx",
-                                    lineNumber: 78,
+                                    lineNumber: 79,
                                     columnNumber: 13
                                 }, this)),
                             users.length === 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -178,25 +179,25 @@ function Home() {
                                 children: "No users found."
                             }, void 0, false, {
                                 fileName: "[project]/apps/web/src/app/page.tsx",
-                                lineNumber: 90,
+                                lineNumber: 91,
                                 columnNumber: 34
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/apps/web/src/app/page.tsx",
-                        lineNumber: 76,
+                        lineNumber: 77,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/apps/web/src/app/page.tsx",
-                lineNumber: 74,
+                lineNumber: 75,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/apps/web/src/app/page.tsx",
-        lineNumber: 45,
+        lineNumber: 46,
         columnNumber: 5
     }, this);
 }

@@ -7,6 +7,7 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "outDir": "./dist",
+    "rootDir": "./src",
     "baseUrl": ".",
     "paths": {
       "@repo/database": ["../../packages/database/src/index.ts"],
@@ -14,4 +15,8 @@
     }
   },
   "include": ["src/**/*"]
+  ,
+  "references": [
+    { "path": "../../packages/database" }
+  ]
 }

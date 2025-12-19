@@ -6,8 +6,8 @@
   "scripts": {
     "build": "tsc",
     "clean": "rm -rf dist",
-    "push": "dotenv -e ../../.env -- prisma db push",
-    "generate": "dotenv -e ../../.env -- prisma generate"
+    "push": "env-cmd -f ../../.env prisma db push",
+    "generate": "env-cmd -f ../../.env prisma generate"
   },
   "dependencies": {
     "@prisma/client": "^6.19.1"
