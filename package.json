@@ -7,6 +7,8 @@
   ],
   "scripts": {
     "dev": "env-cmd -f .env concurrently \"npm run dev --workspace=web\" \"npm run dev --workspace=api\" --kill-others --names \"WEB,API\" --prefix-colors \"blue,magenta\"",
+    "db:push": "env-cmd -f .env npm run push --workspace=@repo/database",
+    "db:generate": "env-cmd -f .env npm run generate --workspace=@repo/database",
     "build": "npm run build --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "postinstall": "npm run generate --workspace=@repo/database"

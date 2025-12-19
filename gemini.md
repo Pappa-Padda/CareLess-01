@@ -92,11 +92,11 @@ The database logic is centralized in `@repo/database`.
 1.  **Modify Schema:** Edit `packages/database/prisma/schema.prisma`.
 2.  **Push Changes:** Update your development database:
     ```bash
-    npm run push --workspace=@repo/database
+    npm run db:push
     ```
 3.  **Generate Client:** Update the TypeScript client (automatically runs on install, but run this if you edit schema manually):
     ```bash
-    npm run generate --workspace=@repo/database
+    npm run db:generate
     ```
 
 ### Deployment Note
