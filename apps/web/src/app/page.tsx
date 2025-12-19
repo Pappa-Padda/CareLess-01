@@ -17,7 +17,7 @@ export default function Home() {
 
   // Fetch users from the backend API
   useEffect(() => {
-    fetch('/users')
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/users`)
       .then((res) => res.json())
       .then((data) => setUsers(data));
   }, []);
@@ -27,7 +27,7 @@ export default function Home() {
     if (!phoneNumber) return;
 
     // Send data to the backend API
-    const res = await fetch('/users', {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ phoneNumber, name }),

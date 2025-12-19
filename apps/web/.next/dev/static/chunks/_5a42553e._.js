@@ -6,6 +6,7 @@ __turbopack_context__.s([
     "default",
     ()=>Home
 ]);
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$polyfills$2f$process$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = /*#__PURE__*/ __turbopack_context__.i("[project]/node_modules/next/dist/build/polyfills/process.js [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/compiled/react/jsx-dev-runtime.js [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/compiled/react/index.js [app-client] (ecmascript)");
 ;
@@ -20,7 +21,7 @@ function Home() {
     // Fetch users from the backend API
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
         "Home.useEffect": ()=>{
-            fetch('/users').then({
+            fetch(`${("TURBOPACK compile-time value", "http://localhost:4000")}/users`).then({
                 "Home.useEffect": (res)=>res.json()
             }["Home.useEffect"]).then({
                 "Home.useEffect": (data)=>setUsers(data)
@@ -31,7 +32,7 @@ function Home() {
         e.preventDefault();
         if (!phoneNumber) return;
         // Send data to the backend API
-        const res = await fetch('/users', {
+        const res = await fetch(`${("TURBOPACK compile-time value", "http://localhost:4000")}/users`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
