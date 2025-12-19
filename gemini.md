@@ -117,10 +117,15 @@ Use a managed MySQL provider (e.g., PlanetScale, AWS RDS, Railway).
 - Set `DATABASE_URL` to the connection string provided by the host.
 
 ### 2. API (Backend)
-Deploy `apps/api` to a Node.js host (e.g., Railway, Render, VPS).
+Deploy to **Render** (Free Web Service).
+
+**Critical Settings:**
+- **Root Directory:** `.` (Leave empty / Project Root). **Do not set to apps/api**.
+- **Build Command:** `npm install && npm run build`
+- **Start Command:** `npm run start:api`
 - **Env Vars:**
   - `DATABASE_URL`: Your cloud DB string.
-  - `API_PORT`: Often provided by the host (or set to 80/443).
+  - `PORT`: (Optional, Render handles this automatically).
 
 ### 3. Web (Frontend)
 Deploy `apps/web` to a static/Node host (e.g., Vercel, Netlify).

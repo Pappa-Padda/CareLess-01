@@ -10,6 +10,7 @@
     "db:push": "env-cmd -f .env npm run push --workspace=@repo/database",
     "db:generate": "env-cmd -f .env npm run generate --workspace=@repo/database",
     "build": "npm run build --workspace=@repo/database && npm run build --workspaces --if-present",
+    "start:api": "npm start --workspace=api",
     "lint": "npm run lint --workspaces --if-present",
     "postinstall": "env-cmd -f .env npm run generate --workspace=@repo/database || npm run generate --workspace=@repo/database"
   },
