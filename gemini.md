@@ -129,6 +129,7 @@ Deploy `apps/web` to a static/Node host (e.g., Vercel, Netlify).
 
 ## 🛠️ Root Scripts
 
-- `npm run dev`: Starts all apps in parallel.
-- `npm run build`: Builds all workspaces.
+- `npm run dev`: Starts all apps in parallel using `env-cmd` to load variables.
+- `npm run build`: Builds all workspaces. Includes a fallback to support both local `.env` files and production CI/CD.
 - `npm run lint`: Runs linting across all workspaces.
+- `postinstall`: Automatically generates the Prisma client after install. Safe for both local and production.

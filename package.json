@@ -9,9 +9,9 @@
     "dev": "env-cmd -f .env concurrently \"npm run dev --workspace=web\" \"npm run dev --workspace=api\" --kill-others --names \"WEB,API\" --prefix-colors \"blue,magenta\"",
     "db:push": "env-cmd -f .env npm run push --workspace=@repo/database",
     "db:generate": "env-cmd -f .env npm run generate --workspace=@repo/database",
-    "build": "npm run build --workspaces --if-present",
+    "build": "env-cmd -f .env npm run build --workspaces --if-present || npm run build --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
-    "postinstall": "npm run generate --workspace=@repo/database"
+    "postinstall": "env-cmd -f .env npm run generate --workspace=@repo/database || npm run generate --workspace=@repo/database"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",
