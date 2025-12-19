@@ -1,70 +1,129 @@
-# Project Overview
+# CareLess-01 Monorepo
 
-This is a **Monorepo** containing a Next.js frontend and a separate Express.js API.
-- **Frontend**: Next.js (PWA) in `apps/web`.
-- **Backend**: Express.js API in `apps/api`.
-- **Database**: Prisma with MySQL in `packages/database`.
-- **Types**: Shared TypeScript types in `packages/types`.
+This project is structured as a **Monorepo** using npm workspaces. It separates the frontend, backend, and shared logic into distinct packages while keeping them in a single repository for easier development.
+
+## 📂 Directory Structure
+
+```text
+├── apps/
+│   ├── web/                # Next.js Frontend (PWA)
+│   │   ├── src/
+│   │   │   ├── app/        # Application layer (routes, providers, etc.)
+│   │   │   ├── assets/     # Static files (images, fonts, etc.)
+│   │   │   ├── components/ # Shared UI components
+│   │   │   ├── config/     # Global configurations & env exports
+│   │   │   ├── features/   # Feature-based modules
+│   │   │   ├── hooks/      # Shared custom hooks
+│   │   │   ├── lib/        # Reusable libraries (API clients, etc.)
+│   │   │   ├── stores/     # Global state management
+│   │   │   ├── testing/    # Test utilities and mocks
+│   │   │   ├── types/      # Local frontend types
+│   │   │   └── utils/      # Shared utility functions
+│   │   └── ...
+│   │
+│   └── api/                # Express.js Backend
+│       ├── src/
+│       │   ├── controllers/ # Business logic
+│       │   ├── middleware/  
+    │   │   ├── models/      # For Custom API Models
+│       │   ├── routes/      # Endpoint definitions
+│       │   └── index.ts     # Server entry point
+│       └── ...
+│
+├── packages/
+│   ├── database/           # Shared Prisma ORM Client
+│   │   ├── prisma/         # Schema & Migrations
+│   │   └── src/            # Exports the PrismaClient 
+│   └── types/              # Shared TypeScript interfaces
+│       └── src/            # Export shared types here
+│
+├── .env                    # Single Environment file
+└── package.json            # Root configuration & scripts
+```
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 
-- Node.js installed.
-- A running MySQL database instance.
-- A `.env` file in the root directory containing your database connection string:
-  ```env
-  DATABASE_URL="mysql://USER:PASSWORD@HOST:PORT/DATABASE"
-  ```
+- **Node.js** (v18+ recommended)
+- **MySQL** Database (Local or Cloud)
 
 ### Installation
 
-From the root directory, install all dependencies:
+Install all dependencies for the entire monorepo from the root:
+
 ```bash
 npm install
 ```
 
-### Development Server
+### Environment Variables
 
-To start both the **Frontend** and the **API** simultaneously, run from the root:
+We use a **single root `.env` file**. The `dotenv-cli` tool loads these variables into all workspaces during development.
+
+Create a `.env` file in the root:
+
+```env
+# Database Connection
+DATABASE_URL="mysql://root:password@localhost:3306/careless"
+
+# Backend Configuration
+API_PORT=4000
+
+# Frontend Configuration
+# Points to the API. In Prod, this will be your deployed API domain.
+NEXT_PUBLIC_API_URL="http://localhost:4000"
+```
+
+### Running Development Server
+
+To start both the **Frontend** (port 3000) and **Backend** (port 4000) simultaneously:
 
 ```bash
 npm run dev
 ```
+*You will see blue logs for Web and magenta logs for API.*
 
-#### Individual Services
+## 🗄️ Database Management
 
-If you want to run only one service:
+The database logic is centralized in `@repo/database`. Run these commands from the **root directory**:
 
-- **Web (Next.js)**: `npm run dev --workspace=web` (Runs on http://localhost:3000)
-- **API (Express)**: `npm run dev --workspace=api` (Runs on http://localhost:4000)
-
-## 🗄️ Database
-
-This project uses **MySQL** as its database provider via Prisma, located in `packages/database`.
-
-### Managing the Database
-
-You should run these commands from the root using workspaces or by navigating to `packages/database`.
-
-- **Push schema (Prototyping):**
+- **Push Schema** (Quickly sync schema with DB without migration files):
   ```bash
   npm run push --workspace=@repo/database
   ```
 
-- **Regenerate Prisma Client:**
+- **Generate Client** (Update TypeScript definitions after schema changes):
   ```bash
   npm run generate --workspace=@repo/database
   ```
 
-- **Open Prisma Studio:**
+- **Open Prisma Studio** (GUI to view data):
   ```bash
   cd packages/database
   npx prisma studio
   ```
 
-## 🛠️ Scripts (Root)
+## 🌐 Production & Deployment
 
-- `dev`: Runs all apps in development mode.
-- `build`: Builds all apps and packages.
-- `lint`: Runs ESLint across all workspaces.
+In production, you will deploy the `apps/web` and `apps/api` separately (or containerized together), but they will no longer read from the root `.env` file. You must set environment variables in your hosting provider's dashboard.
+
+### 1. Database
+Use a managed MySQL provider (e.g., PlanetScale, AWS RDS, Railway).
+- Set `DATABASE_URL` to the connection string provided by the host.
+
+### 2. API (Backend)
+Deploy `apps/api` to a Node.js host (e.g., Railway, Render, VPS).
+- **Env Vars:**
+  - `DATABASE_URL`: Your cloud DB string.
+  - `API_PORT`: Often provided by the host (or set to 80/443).
+
+### 3. Web (Frontend)
+Deploy `apps/web` to a static/Node host (e.g., Vercel, Netlify).
+- **Env Vars:**
+  - `NEXT_PUBLIC_API_URL`: The full URL of your deployed API (e.g., `https://api.myapp.com`).
+
+## 🛠️ Root Scripts
+
+- `npm run dev`: Starts all apps in parallel.
+- `npm run build`: Builds all workspaces.
+- `npm run lint`: Runs linting across all workspaces.
