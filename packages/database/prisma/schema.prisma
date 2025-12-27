@@ -39,6 +39,9 @@ model User {
   id             Int      @id @default(autoincrement()) @map("User_ID")
   name           String   @map("Name")
   phoneNumber    String   @map("Phone_Number")
+  email          String?  @unique @map("Email")
+  passwordHash   String?  @map("Password_Hash")
+  role           Role     @default(USER) @map("Role")
   profilePicture String?  @map("Profile_Picture")
   isDriver       Boolean  @default(false) @map("Is_Driver")
   isPassenger    Boolean  @default(false) @map("Is_Passenger")
@@ -51,6 +54,12 @@ model User {
   driver      Driver?
   passenger   Passenger?
   userGroupAssociation UserGroupAssociation[]
+}
+
+enum Role {
+  USER
+  ADMIN
+  MODERATOR
 }
 
 model AddressList {

@@ -1,0 +1,65 @@
+/* [project]/apps/web/src/app/signin/signin.module.css [app-client] (css) */
+.signin-module__a8nUMW__container {
+  background: var(--bg, white);
+  min-height: 100vh;
+  color: var(--text, black);
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  display: flex;
+}
+
+.signin-module__a8nUMW__card {
+  background: var(--card-bg, #fff);
+  border-radius: 8px;
+  width: 100%;
+  max-width: 420px;
+  padding: 1.25rem;
+  box-shadow: 0 6px 18px #1018280f;
+}
+
+.signin-module__a8nUMW__title {
+  margin: 0 0 .75rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.signin-module__a8nUMW__form {
+  flex-direction: column;
+  gap: .75rem;
+  display: flex;
+}
+
+.signin-module__a8nUMW__label {
+  font-size: .875rem;
+}
+
+.signin-module__a8nUMW__input {
+  background: none;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: .5rem .75rem;
+}
+
+.signin-module__a8nUMW__button {
+  color: #fff;
+  cursor: pointer;
+  background: #2563eb;
+  border: none;
+  border-radius: 6px;
+  margin-top: .25rem;
+  padding: .6rem .9rem;
+}
+
+.signin-module__a8nUMW__button:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+}
+
+.signin-module__a8nUMW__error {
+  color: #dc2626;
+  margin-top: .5rem;
+  font-size: .9rem;
+}
+
+/*# sourceMappingURL=apps_web_src_app_signin_signin_module_389798a4.css.map*/

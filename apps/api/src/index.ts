@@ -1,16 +1,22 @@
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import userRoutes from './routes/userRoutes';
+import authRoutes from './routes/authRoutes';
 
 const app = express();
-const PORT = process.env.PORT || process.env.API_PORT || 4000;
-const API_URL = process.env.NEXT_PUBLIC_API_URL || `http://localhost:${PORT}`;
+// PORT is automatically set by Render to 10000 or from environment variable
+// API_PORT will be used for local development
+const PORT = process.env.PORT || process.env.API_PORT;
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 app.use(cors());
 app.use(express.json());
+app.use(cookieParser());
 
 // Routes
 app.use('/users', userRoutes);
+app.use('/auth', authRoutes);
 
 app.get('/', (req, res) => {
   res.send('API is running');

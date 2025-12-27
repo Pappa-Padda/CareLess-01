@@ -134,6 +134,37 @@ We have added a `postinstall` script to the root `package.json`. This means when
   npx prisma studio
   ```
 
+### Prisma Migration Steps (recommended for schema changes)
+
+When you change the Prisma schema and need a migration rather than a quick push, follow these steps.
+
+- From the repo root (loads root `.env` automatically):
+  ```powershell
+  # create a dev migration and apply it locally
+  npx prisma migrate dev --schema packages/database/prisma/schema.prisma --name add-descriptive-name
+  ```
+
+- If you run commands inside the package folder, ensure Prisma can load env vars:
+  - Create `packages/database/.env` or set `DATABASE_URL` in your shell before running.
+  - Or run from repo root with `--schema` to point to the package schema.
+
+- After running migrations, regenerate the client and run any seeds:
+  ```powershell
+  npm --prefix packages/database run generate
+  npm --prefix packages/database run seed
+  ```
+
+- If Prisma complains about missing env vars when running inside a package, you can explicitly export them in PowerShell, for example:
+  ```powershell
+  $env:DATABASE_URL = "your_database_url_here"
+  $env:JWT_SECRET = "your_jwt_secret_here"
+  npx prisma migrate dev --schema packages/database/prisma/schema.prisma --name add-auth-and-role
+  ```
+
+- Notes:
+  - Use `upsert` only when the `where` clause is a unique field (e.g., `id` or another unique). For non-unique lookups use `findFirst` + `create`/`update`.
+  - For CI/production, prefer running `prisma migrate deploy` instead of `migrate dev`.
+
 ## 🌐 Production & Deployment
 
 In production, you will deploy the `apps/web` and `apps/api` separately (or containerized together), but they will no longer read from the root `.env` file. You must set environment variables in your hosting provider's dashboard.
@@ -156,7 +187,7 @@ Deploy to **Render** (Free Web Service).
 ### 3. Web (Frontend)
 Deploy `apps/web` to a static/Node host (e.g., Vercel, Netlify).
 - **Env Vars:**
-  - `NEXT_PUBLIC_API_URL`: The full URL of your deployed API (e.g., `https://api.myapp.com`).
+  - `NEXT_PUBLIC_API_URL`: Find it in the .env file.
 
 ## 🛠️ Root Scripts
 
