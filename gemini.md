@@ -83,6 +83,32 @@ npm run dev
 ```
 *You will see blue logs for Web and magenta logs for API.*
 
+## 🎨 Styling & UI Strategy
+
+This project uses **Tailwind CSS** as the primary styling engine.
+
+### 1. Configuration
+- **Tailwind Config:** Located in `apps/web/tailwind.config.ts`.
+- **Global Styles:** `apps/web/src/app/globals.css`. Use this file *only* for:
+  - Tailwind directives (`@tailwind base; ...`)
+  - CSS Variables (e.g., `:root { --primary: #3b82f6; }`)
+  - Global resets (e.g., `body { @apply bg-zinc-50; }`)
+
+### 2. Component Styling
+- **Utility-First:** Write styles directly in JSX using `className`.
+  ```tsx
+  <div className="flex items-center p-4 bg-white shadow-sm rounded-lg">
+  ```
+- **Consistent Tokens:** Avoid magic numbers. Use Tailwind's spacing scale (`p-4`, `m-2`) and color palette (`text-blue-600`) to ensure consistency.
+
+### 3. Architecture for Growth
+- **Atomic Components:** Build small, reusable UI pieces in `src/components/ui/` (e.g., `Button.tsx`, `Card.tsx`).
+- **Feature Specific:** Feature-specific layout styles live within `src/features/<feature>/components`.
+- **Class Merging:** Use a utility like `clsx` or `tailwind-merge` (recommended to install) to safely override styles in reusable components.
+
+### 4. Customization
+- Define your custom colors, fonts, and breakpoints in `tailwind.config.ts` under the `theme.extend` key. This serves as your "Design System" source of truth.
+
 ## 🗄️ Database Management
 
 The database logic is centralized in `@repo/database`.
