@@ -6,9 +6,13 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "MySQL CareLess PWA",
-  description: "Built with Next.js and TiDB",
-  manifest: "/manifest.json", // <-- This links the manifest file
+  title: "CAReLESS",
+  description: "Organize event lifts efficiently",
+  manifest: "/manifest.json",
+  icons: {
+    icon: "/icons/icon-48x48.jpg",
+    apple: "/icons/icon-192x192.jpg",
+  },
 };
 
 export const viewport: Viewport = {

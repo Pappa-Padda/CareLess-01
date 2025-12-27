@@ -43,9 +43,13 @@ var __TURBOPACK__imported__module__$5b$next$5d2f$internal$2f$font$2f$google$2f$i
 ;
 ;
 const metadata = {
-    title: "MySQL CareLess PWA",
-    description: "Built with Next.js and TiDB",
-    manifest: "/manifest.json"
+    title: "CAReLESS",
+    description: "Organize event lifts efficiently",
+    manifest: "/manifest.json",
+    icons: {
+        icon: "/icons/icon-48x48.jpg",
+        apple: "/icons/icon-192x192.jpg"
+    }
 };
 const viewport = {
     themeColor: "#000000"
@@ -58,12 +62,12 @@ function RootLayout({ children }) {
             children: children
         }, void 0, false, {
             fileName: "[project]/apps/web/src/app/layout.tsx",
-            lineNumber: 25,
+            lineNumber: 29,
             columnNumber: 7
         }, this)
     }, void 0, false, {
         fileName: "[project]/apps/web/src/app/layout.tsx",
-        lineNumber: 24,
+        lineNumber: 28,
         columnNumber: 5
     }, this);
 }

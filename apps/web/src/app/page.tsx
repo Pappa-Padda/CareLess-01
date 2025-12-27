@@ -1,5 +1,5 @@
-import MarketingPage from '@/components/marketing-page/MarketingPage';
+import CarelessHomePage from '@/components/home/CarelessHomePage';
 
 export default function Home() {
-  return <MarketingPage />;
+  return <CarelessHomePage />;
 }

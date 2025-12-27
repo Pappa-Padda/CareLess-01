@@ -13,7 +13,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import Link from 'next/link';
 import ColorModeIconDropdown from '../../shared-theme/ColorModeIconDropdown';
-import Sitemark from './SitemarkIcon';
+import Sitemark from '../../shared/SitemarkIcon';
 
 const StyledToolbar = styled(Toolbar)(({ theme }) => ({
   display: 'flex',
