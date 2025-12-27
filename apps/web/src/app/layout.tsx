@@ -2,12 +2,13 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import NextAppDirEmotionCacheProvider from "@/lib/NextAppDirEmotionCacheProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "CAReLESS",
-  description: "Organize event lifts efficiently",
+  description: "Organize church lifts efficiently",
   manifest: "/manifest.json",
   icons: {
     icon: "/icons/icon-48x48.jpg",
@@ -26,8 +27,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={inter.className}>{children}
+      <body className={inter.className}>
+        <NextAppDirEmotionCacheProvider options={{ key: 'mui' }}>
+          {children}
+        </NextAppDirEmotionCacheProvider>
       </body>
     </html>
   );

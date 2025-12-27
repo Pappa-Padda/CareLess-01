@@ -2,6 +2,28 @@
 
 This project is structured as a **Monorepo** using npm workspaces. It separates the frontend, backend, and shared logic into distinct packages while keeping them in a single repository for easier development.
 
+## 📈 App Progress
+
+### Completed Features
+- [x] **Monorepo Setup:** Turbo/NPM Workspaces with Web (Next.js), API (Express), and Database packages.
+- [x] **UI Architecture:**
+    - Material UI v6 + Emotion + CSS Modules.
+    - `AppTheme` provider for consistent theming (Light/Dark mode).
+    - `NextAppDirEmotionCacheProvider` (`src/lib`) implemented for SSR style compatibility (fixes hydration errors).
+- [x] **Branding:**
+    - Renamed to **CAReLESS**.
+    - Custom Favicons and Manifest for PWA.
+    - Logo/Icon integration in Headers and Auth pages.
+- [x] **Pages & Components:**
+    - **Home:** Redesigned Hero with feature grid, hover effects, and clear CTA.
+    - **Navigation:** Simplified AppBar (no hamburger menu, direct links).
+    - **Footer:** Unified `shared/Footer` with interactive Privacy/Terms modals.
+    - **Auth:** Sign In / Sign Up pages with form validation and responsive layout.
+
+### Current Focus
+- Polishing Frontend UI/UX.
+- Connecting Frontend to Backend API.
+
 ## 📂 Directory Structure
 
 ```text
@@ -10,13 +32,16 @@ This project is structured as a **Monorepo** using npm workspaces. It separates 
 │   │   ├── src/
 │   │   │   ├── app/        # Application layer (routes, providers, etc.)
 │   │   │   ├── assets/     # Static files (images, fonts, etc.)
-│   │   │   ├── components/ # Shared UI components
+│   │   │   ├── components/ 
+│   │   │   │   ├── home/       # Home page specific components
+│   │   │   │   ├── shared/     # Reusable components (Footer, Icons, Modals)
+│   │   │   │   ├── shared-theme/ # MUI Theme definitions
+│   │   │   │   └── ...
 │   │   │   ├── config/     # Global configurations & env exports
 │   │   │   ├── features/   # Feature-based modules
 │   │   │   ├── hooks/      # Shared custom hooks
-│   │   │   ├── lib/        # Reusable libraries (API clients, etc.)
+│   │   │   ├── lib/        # Reusable libraries (Emotion cache, etc.)
 │   │   │   ├── stores/     # Global state management
-│   │   │   ├── testing/    # Test utilities and mocks
 │   │   │   ├── types/      # Local frontend types
 │   │   │   └── utils/      # Shared utility functions
 │   │   └── ...
@@ -85,29 +110,31 @@ npm run dev
 
 ## 🎨 Styling & UI Strategy
 
-This project uses **Tailwind CSS** as the primary styling engine.
+This project primarily uses **Material UI (MUI)** for components and theming, with **CSS Modules** for complex or custom layouts.
 
-### 1. Configuration
-- **Tailwind Config:** Located in `apps/web/tailwind.config.ts`.
-- **Global Styles:** `apps/web/src/app/globals.css`. Use this file *only* for:
-  - Tailwind directives (`@tailwind base; ...`)
-  - CSS Variables (e.g., `:root { --primary: #3b82f6; }`)
-  - Global resets (e.g., `body { @apply bg-zinc-50; }`)
+### 1. Framework & Theme
+- **MUI (Material UI):** We use MUI v6+ components (e.g., `<Box>`, `<Stack>`, `<Typography>`, `<Button>`) as the core building blocks.
+- **Theming:** The custom theme is defined in `apps/web/src/components/shared-theme/AppTheme.tsx` and applied via the `AppTheme` provider. This controls colors, typography, and component overrides.
+- **Dark Mode:** Supported out-of-the-box via MUI's color scheme customization.
 
 ### 2. Component Styling
-- **Utility-First:** Write styles directly in JSX using `className`.
+- **MUI System (`sx` prop):** For simple, one-off overrides (margins, padding, basic flexbox), use the `sx` prop directly on components.
   ```tsx
-  <div className="flex items-center p-4 bg-white shadow-sm rounded-lg">
+  <Box sx={{ p: 2, display: 'flex', gap: 1 }}>
   ```
-- **Consistent Tokens:** Avoid magic numbers. Use Tailwind's spacing scale (`p-4`, `m-2`) and color palette (`text-blue-600`) to ensure consistency.
+- **CSS Modules:** For complex layouts, animations, or extensive custom styling, use CSS Modules (e.g., `ComponentName.module.css`).
+  - Create a `.module.css` file next to the component.
+  - Import it as `import styles from './ComponentName.module.css';`.
+  - Use classes like `className={styles.container}`.
+  - This keeps JSX clean and styles scoped.
 
-### 3. Architecture for Growth
-- **Atomic Components:** Build small, reusable UI pieces in `src/components/ui/` (e.g., `Button.tsx`, `Card.tsx`).
-- **Feature Specific:** Feature-specific layout styles live within `src/features/<feature>/components`.
-- **Class Merging:** Use a utility like `clsx` or `tailwind-merge` (recommended to install) to safely override styles in reusable components.
+### 3. Icons & Assets
+- **Icons:** We use `@mui/icons-material` for standard UI icons.
+- **Custom Assets:** Custom SVG icons or images (like `SitemarkIcon`) are stored in `apps/web/src/components/shared` or public assets.
 
-### 4. Customization
-- Define your custom colors, fonts, and breakpoints in `tailwind.config.ts` under the `theme.extend` key. This serves as your "Design System" source of truth.
+### 4. Layout
+- **Responsive Design:** Use MUI's responsive syntax in `sx` (e.g., `width: { xs: '100%', md: '50%' }`) or media queries in CSS Modules.
+- **Grid & Stack:** Prefer MUI's `<Stack>` for linear layouts and CSS Grid (via CSS Modules) for complex 2D layouts.
 
 ## 🗄️ Database Management
 
