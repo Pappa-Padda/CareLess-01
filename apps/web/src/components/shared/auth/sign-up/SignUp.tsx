@@ -5,8 +5,6 @@ import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
 import FormLabel from '@mui/material/FormLabel';
 import FormControl from '@mui/material/FormControl';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import Checkbox from '@mui/material/Checkbox';
 import Link from '@mui/material/Link';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
@@ -16,7 +14,7 @@ import { useRouter } from 'next/navigation';
 import AuthLayout from '../AuthLayout';
 import { useAuth } from '@/context/AuthContext';
 
-export default function SignUp(props: { disableCustomTheme?: boolean }) {
+export default function SignUp() {
   const router = useRouter();
   const { refreshUser } = useAuth();
   const [emailError, setEmailError] = React.useState(false);

@@ -43,27 +43,30 @@ export default function EventFormDialog({
   });
 
   useEffect(() => {
-    if (initialData) {
-      setFormData({
-        name: initialData.name,
-        description: initialData.description || '',
-        date: initialData.date ? new Date(initialData.date).toISOString().split('T')[0] : '',
-        startTime: initialData.startTime ? new Date(initialData.startTime).toTimeString().substring(0, 5) : '',
-        endTime: initialData.endTime ? new Date(initialData.endTime).toTimeString().substring(0, 5) : '',
-        groupId: initialData.groupId,
-        address: initialData.address || defaultAddress,
-      });
-    } else {
-      setFormData({
-        name: '',
-        description: '',
-        date: '',
-        startTime: '',
-        endTime: '',
-        groupId: 1,
-        address: defaultAddress,
-      });
-    }
+    const resetForm = async () => {
+      if (initialData) {
+        setFormData({
+          name: initialData.name,
+          description: initialData.description || '',
+          date: initialData.date ? new Date(initialData.date).toISOString().split('T')[0] : '',
+          startTime: initialData.startTime ? new Date(initialData.startTime).toTimeString().substring(0, 5) : '',
+          endTime: initialData.endTime ? new Date(initialData.endTime).toTimeString().substring(0, 5) : '',
+          groupId: initialData.groupId,
+          address: initialData.address || defaultAddress,
+        });
+      } else {
+        setFormData({
+          name: '',
+          description: '',
+          date: '',
+          startTime: '',
+          endTime: '',
+          groupId: 1,
+          address: defaultAddress,
+        });
+      }
+    };
+    resetForm();
   }, [initialData, open]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -92,9 +95,6 @@ export default function EventFormDialog({
     // We should probably append the date to it to make a full ISO string if API expects that.
     // My Controller expects `new Date(startTime)`. `new Date("HH:MM")` is invalid.
     // I should combine date + time.
-
-    const combinedStartTime = `${formData.date}T${formData.startTime}:00.000Z`; // Simplified
-    const combinedEndTime = `${formData.date}T${formData.endTime}:00.000Z`;
 
     // Note: This timezone handling is naive. Ideally use dayjs/date-fns.
     // For prototype, I will just send the ISO string constructed from local.

@@ -17,7 +17,7 @@ import { useAuth } from '@/context/AuthContext';
 
 interface SignInProps {
   disableCustomTheme?: boolean;
-  onSubmit?: (credentials: { email: string; password: string }) => Promise<{ ok: boolean; error?: any } | void> | void;
+  onSubmit?: (credentials: { email: string; password: string }) => Promise<{ ok: boolean; error?: string } | void> | void;
 }
 
 export default function SignIn(props: SignInProps) {

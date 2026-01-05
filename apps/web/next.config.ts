@@ -6,7 +6,9 @@ const nextConfig: NextConfig = {
   },
 }
 
-const withPWA = require("@ducanh2912/next-pwa").default({
+import withPWAInit from "@ducanh2912/next-pwa";
+
+const withPWA = withPWAInit({
   dest: "public", // The folder where service worker files will be generated
   cacheOnFrontEndNav: true,
   aggressiveFrontEndNavCaching: true,

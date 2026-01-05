@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { Container, Typography, Button, Box, Alert, Snackbar } from '@mui/material';
+import { Container, Typography, Button, Box, Alert } from '@mui/material';
 import { Add } from '@mui/icons-material';
 import EventManagementTable from '@/features/events/components/EventManagementTable';
 import EventFormDialog from '@/features/events/components/EventFormDialog';
@@ -13,7 +13,7 @@ export default function EventManagementPage() {
   const [selectedEvent, setSelectedEvent] = useState<Event | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchEvents = async () => {
+  const fetchEvents = React.useCallback(async () => {
     try {
       const data = await eventService.getEvents();
       setEvents(data);
@@ -21,11 +21,14 @@ export default function EventManagementPage() {
       console.error(err);
       setError('Failed to load events');
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchEvents();
-  }, []);
+    const loadEvents = async () => {
+      await fetchEvents();
+    };
+    loadEvents();
+  }, [fetchEvents]);
 
   const handleCreate = () => {
     setSelectedEvent(undefined);

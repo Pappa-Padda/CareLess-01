@@ -1,12 +1,10 @@
 'use client';
 import * as React from 'react';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
-import NextLink from 'next/link';
 import styles from './CarelessHero.module.css';
 
 export default function CarelessHero() {
@@ -40,7 +38,7 @@ export default function CarelessHero() {
                 </Typography>
               </Box>
               <Typography className={styles.featureReason}>
-                No more "Who's driving?" spam. Automated matching handles it.
+                No more &quot;Who&apos;s driving?&quot; spam. Automated matching handles it.
               </Typography>
             </Box>
             <Box className={styles.featureBox}>
@@ -73,7 +71,7 @@ export default function CarelessHero() {
                 </Typography>
               </Box>
               <Typography className={styles.featureReason}>
-                Algortihm calculates optimal detours for drivers.
+                Algorithm calculates optimal detours for drivers.
               </Typography>
             </Box>
             <Box className={styles.featureBox}>

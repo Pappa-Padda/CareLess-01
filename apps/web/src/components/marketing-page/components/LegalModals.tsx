@@ -29,7 +29,7 @@ export function PrivacyPolicyModal({ open, onClose }: LegalModalProps) {
         >
           <p><strong>Effective Date:</strong> January 1, 2026</p>
           <p>
-            At CAReLESS ("we," "our," or "us"), we prioritize the privacy and security of our users. This Privacy Policy outlines how we collect, use, and protect your information when you use our lift-organization platform.
+            At CAReLESS (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;), we prioritize the privacy and security of our users. This Privacy Policy outlines how we collect, use, and protect your information when you use our lift-organization platform.
           </p>
           <p><strong>1. Information We Collect</strong></p>
           <p>
@@ -92,7 +92,7 @@ export function TermsOfServiceModal({ open, onClose }: LegalModalProps) {
           <p><strong>2. Use of Service</strong></p>
           <p>
             CAReLESS is a tool for organizing voluntary lift sharing within communities. We are <strong>not</strong> a transportation provider.
-            <br />• <strong>Drivers:</strong> You are responsible for maintaining a valid driver's license, insurance, and a safe vehicle.
+            <br />• <strong>Drivers:</strong> You are responsible for maintaining a valid driver&apos;s license, insurance, and a safe vehicle.
             <br />• <strong>Passengers:</strong> You agree to be respectful and punctual.
           </p>
           <p><strong>3. Liability Disclaimer</strong></p>
