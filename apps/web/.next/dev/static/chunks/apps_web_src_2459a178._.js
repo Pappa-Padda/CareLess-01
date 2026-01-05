@@ -80,7 +80,7 @@ function NextAppDirEmotionCacheProvider(props) {
         columnNumber: 10
     }, this);
 }
-_s(NextAppDirEmotionCacheProvider, "9581zLk5H+pBynfpAE0M21V8b3U=", false, function() {
+_s(NextAppDirEmotionCacheProvider, "CKkZZb6FdtbKptBiIelF89lACTc=", false, function() {
     return [
         __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$navigation$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useServerInsertedHTML"]
     ];

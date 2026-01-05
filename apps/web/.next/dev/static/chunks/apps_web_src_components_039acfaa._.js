@@ -659,7 +659,7 @@ function SignUp(props) {
                                 children: "Full name"
                             }, void 0, false, {
                                 fileName: "[project]/apps/web/src/components/shared/auth/sign-up/SignUp.tsx",
-                                lineNumber: 120,
+                                lineNumber: 118,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$mui$2f$material$2f$esm$2f$TextField$2f$TextField$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
@@ -674,13 +674,13 @@ function SignUp(props) {
                                 color: nameError ? 'error' : 'primary'
                             }, void 0, false, {
                                 fileName: "[project]/apps/web/src/components/shared/auth/sign-up/SignUp.tsx",
-                                lineNumber: 121,
+                                lineNumber: 119,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/apps/web/src/components/shared/auth/sign-up/SignUp.tsx",
-                        lineNumber: 119,
+                        lineNumber: 117,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$mui$2f$material$2f$esm$2f$FormControl$2f$FormControl$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
@@ -690,7 +690,7 @@ function SignUp(props) {
                                 children: "Phone Number"
                             }, void 0, false, {
                                 fileName: "[project]/apps/web/src/components/shared/auth/sign-up/SignUp.tsx",
-                                lineNumber: 134,
+                                lineNumber: 132,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$mui$2f$material$2f$esm$2f$TextField$2f$TextField$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
@@ -706,13 +706,13 @@ function SignUp(props) {
                                 color: phoneNumberError ? 'error' : 'primary'
                             }, void 0, false, {
                                 fileName: "[project]/apps/web/src/components/shared/auth/sign-up/SignUp.tsx",
-                                lineNumber: 135,
+                                lineNumber: 133,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/apps/web/src/components/shared/auth/sign-up/SignUp.tsx",
-                        lineNumber: 133,
+                        lineNumber: 131,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$mui$2f$material$2f$esm$2f$FormControl$2f$FormControl$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
@@ -722,7 +722,7 @@ function SignUp(props) {
                                 children: "Email"
                             }, void 0, false, {
                                 fileName: "[project]/apps/web/src/components/shared/auth/sign-up/SignUp.tsx",
-                                lineNumber: 149,
+                                lineNumber: 147,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$mui$2f$material$2f$esm$2f$TextField$2f$TextField$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
@@ -738,13 +738,13 @@ function SignUp(props) {
                                 color: passwordError ? 'error' : 'primary'
                             }, void 0, false, {
                                 fileName: "[project]/apps/web/src/components/shared/auth/sign-up/SignUp.tsx",
-                                lineNumber: 150,
+                                lineNumber: 148,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/apps/web/src/components/shared/auth/sign-up/SignUp.tsx",
-                        lineNumber: 148,
+                        lineNumber: 146,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$mui$2f$material$2f$esm$2f$FormControl$2f$FormControl$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
@@ -754,7 +754,7 @@ function SignUp(props) {
                                 children: "Password"
                             }, void 0, false, {
                                 fileName: "[project]/apps/web/src/components/shared/auth/sign-up/SignUp.tsx",
-                                lineNumber: 164,
+                                lineNumber: 162,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$mui$2f$material$2f$esm$2f$TextField$2f$TextField$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
@@ -771,13 +771,13 @@ function SignUp(props) {
                                 color: passwordError ? 'error' : 'primary'
                             }, void 0, false, {
                                 fileName: "[project]/apps/web/src/components/shared/auth/sign-up/SignUp.tsx",
-                                lineNumber: 165,
+                                lineNumber: 163,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/apps/web/src/components/shared/auth/sign-up/SignUp.tsx",
-                        lineNumber: 163,
+                        lineNumber: 161,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$mui$2f$material$2f$esm$2f$Button$2f$Button$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
@@ -788,13 +788,13 @@ function SignUp(props) {
                         children: "Sign up"
                     }, void 0, false, {
                         fileName: "[project]/apps/web/src/components/shared/auth/sign-up/SignUp.tsx",
-                        lineNumber: 179,
+                        lineNumber: 177,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/apps/web/src/components/shared/auth/sign-up/SignUp.tsx",
-                lineNumber: 114,
+                lineNumber: 112,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$mui$2f$material$2f$esm$2f$Divider$2f$Divider$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
@@ -805,12 +805,12 @@ function SignUp(props) {
                     children: "or"
                 }, void 0, false, {
                     fileName: "[project]/apps/web/src/components/shared/auth/sign-up/SignUp.tsx",
-                    lineNumber: 189,
+                    lineNumber: 187,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/apps/web/src/components/shared/auth/sign-up/SignUp.tsx",
-                lineNumber: 188,
+                lineNumber: 186,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$mui$2f$material$2f$esm$2f$Box$2f$Box$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
@@ -826,28 +826,13 @@ function SignUp(props) {
                         onClick: ()=>alert('Sign up with Google'),
                         startIcon: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$components$2f$shared$2f$auth$2f$CustomIcons$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["GoogleIcon"], {}, void 0, false, {
                             fileName: "[project]/apps/web/src/components/shared/auth/sign-up/SignUp.tsx",
-                            lineNumber: 196,
+                            lineNumber: 194,
                             columnNumber: 22
                         }, void 0),
                         children: "Sign up with Google"
                     }, void 0, false, {
                         fileName: "[project]/apps/web/src/components/shared/auth/sign-up/SignUp.tsx",
-                        lineNumber: 192,
-                        columnNumber: 9
-                    }, this),
-                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$mui$2f$material$2f$esm$2f$Button$2f$Button$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
-                        fullWidth: true,
-                        variant: "outlined",
-                        onClick: ()=>alert('Sign up with Facebook'),
-                        startIcon: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$components$2f$shared$2f$auth$2f$CustomIcons$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["FacebookIcon"], {}, void 0, false, {
-                            fileName: "[project]/apps/web/src/components/shared/auth/sign-up/SignUp.tsx",
-                            lineNumber: 204,
-                            columnNumber: 22
-                        }, void 0),
-                        children: "Sign up with Facebook"
-                    }, void 0, false, {
-                        fileName: "[project]/apps/web/src/components/shared/auth/sign-up/SignUp.tsx",
-                        lineNumber: 200,
+                        lineNumber: 190,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$mui$2f$material$2f$esm$2f$Typography$2f$Typography$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
@@ -867,25 +852,25 @@ function SignUp(props) {
                                 children: "Sign in"
                             }, void 0, false, {
                                 fileName: "[project]/apps/web/src/components/shared/auth/sign-up/SignUp.tsx",
-                                lineNumber: 210,
+                                lineNumber: 200,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/apps/web/src/components/shared/auth/sign-up/SignUp.tsx",
-                        lineNumber: 208,
+                        lineNumber: 198,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/apps/web/src/components/shared/auth/sign-up/SignUp.tsx",
-                lineNumber: 191,
+                lineNumber: 189,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/apps/web/src/components/shared/auth/sign-up/SignUp.tsx",
-        lineNumber: 113,
+        lineNumber: 111,
         columnNumber: 5
     }, this);
 }
