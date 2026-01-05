@@ -6,9 +6,11 @@ import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
+import Typography from '@mui/material/Typography';
 import Link from 'next/link';
 import ColorModeIconDropdown from '../../shared-theme/ColorModeIconDropdown';
 import Sitemark from '../../shared/SitemarkIcon';
+import { useAuth } from '@/context/AuthContext';
 
 const StyledToolbar = styled(Toolbar)(({ theme }) => ({
   display: 'flex',
@@ -27,6 +29,33 @@ const StyledToolbar = styled(Toolbar)(({ theme }) => ({
 }));
 
 export default function CarelessAppBar() {
+  const { user, logout } = useAuth();
+
+  let authButtons;
+  if (user) {
+    authButtons = (
+      <>
+        <Typography variant="body2" color="text.primary">
+          {user.name}
+        </Typography>
+        <Button color="primary" variant="outlined" size="small" onClick={logout}>
+          Logout
+        </Button>
+      </>
+    );
+  } else {
+    authButtons = (
+      <>
+        <Button color="primary" variant="text" size="small" component={Link} href="/sign-in">
+          Sign in
+        </Button>
+        <Button color="primary" variant="contained" size="small" component={Link} href="/sign-up">
+          Sign up
+        </Button>
+      </>
+    );
+  }
+
   return (
     <AppBar
       position="fixed"
@@ -36,6 +65,7 @@ export default function CarelessAppBar() {
         bgcolor: 'transparent',
         backgroundImage: 'none',
         mt: 'calc(var(--template-frame-height, 0px) + 28px)',
+        zIndex: (theme) => theme.zIndex.drawer + 1,
       }}
     >
       <Container maxWidth="lg">
@@ -50,12 +80,7 @@ export default function CarelessAppBar() {
               alignItems: 'center',
             }}
           >
-            <Button color="primary" variant="text" size="small" component={Link} href="/sign-in">
-              Sign in
-            </Button>
-            <Button color="primary" variant="contained" size="small" component={Link} href="/sign-up">
-              Sign up
-            </Button>
+            {authButtons}
             <ColorModeIconDropdown />
           </Box>
         </StyledToolbar>

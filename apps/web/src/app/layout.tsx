@@ -3,6 +3,10 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import NextAppDirEmotionCacheProvider from "@/lib/NextAppDirEmotionCacheProvider";
+import { AuthProvider } from "@/context/AuthContext";
+import MainLayout from "@/components/layout/MainLayout";
+import AppTheme from "@/components/shared-theme/AppTheme";
+import CssBaseline from "@mui/material/CssBaseline";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -29,7 +33,14 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <NextAppDirEmotionCacheProvider options={{ key: 'mui' }}>
-          {children}
+          <AuthProvider>
+            <AppTheme>
+              <CssBaseline enableColorScheme />
+              <MainLayout>
+                {children}
+              </MainLayout>
+            </AppTheme>
+          </AuthProvider>
         </NextAppDirEmotionCacheProvider>
       </body>
     </html>

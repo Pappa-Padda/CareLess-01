@@ -105,16 +105,6 @@ export default function CarelessHero() {
             useFlexGap
             className={styles.buttonStack}
           >
-            <Button
-              variant="contained"
-              color="primary"
-              size="large"
-              fullWidth
-              component={NextLink}
-              href="/sign-up"
-            >
-              Get Started
-            </Button>
           </Stack>
         </Stack>
       </Container>

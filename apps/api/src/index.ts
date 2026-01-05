@@ -10,7 +10,10 @@ const app = express();
 const PORT = process.env.PORT || process.env.API_PORT;
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:3000', 'https://care-less-prod.vercel.app'],
+  credentials: true,
+}));
 app.use(express.json());
 app.use(cookieParser());
 

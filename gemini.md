@@ -16,13 +16,18 @@ This project is structured as a **Monorepo** using npm workspaces. It separates 
     - Logo/Icon integration in Headers and Auth pages.
 - [x] **Pages & Components:**
     - **Home:** Redesigned Hero with feature grid, hover effects, and clear CTA.
-    - **Navigation:** Simplified AppBar (no hamburger menu, direct links).
+    - **Navigation:** Simplified AppBar with dynamic authentication states.
     - **Footer:** Unified `shared/Footer` with interactive Privacy/Terms modals.
-    - **Auth:** Sign In / Sign Up pages with form validation and responsive layout.
+    - **Auth:** Refactored to use a shared `AuthLayout` and centralized styling in `src/components/shared/auth`.
+- [x] **Authentication & State:**
+    - **Backend:** Functional Sign In, Sign Up, and Sign Out endpoints with JWT (stored in httpOnly cookies).
+    - **Frontend:** Global `AuthContext` providing user state and actions across the app.
+    - **Persistence:** Dynamic header updates (Name/Logout vs Sign In/Up) based on session.
 
 ### Current Focus
 - Polishing Frontend UI/UX.
-- Connecting Frontend to Backend API.
+- Implementing Group and Event management features.
+- Connecting more Frontend features to Backend API.
 
 ## 📂 Directory Structure
 
