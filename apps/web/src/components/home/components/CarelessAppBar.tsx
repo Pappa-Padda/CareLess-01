@@ -29,21 +29,10 @@ const StyledToolbar = styled(Toolbar)(({ theme }) => ({
 }));
 
 export default function CarelessAppBar() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
-  let authButtons;
-  if (user) {
-    authButtons = (
-      <>
-        <Typography variant="body2" color="text.primary">
-          {user.name}
-        </Typography>
-        <Button color="primary" variant="outlined" size="small" onClick={logout}>
-          Logout
-        </Button>
-      </>
-    );
-  } else {
+  let authButtons = null;
+  if (!user) {
     authButtons = (
       <>
         <Button color="primary" variant="text" size="small" component={Link} href="/sign-in">
@@ -66,6 +55,9 @@ export default function CarelessAppBar() {
         backgroundImage: 'none',
         mt: 'calc(var(--template-frame-height, 0px) + 28px)',
         zIndex: (theme) => theme.zIndex.drawer + 1,
+        // Shift the AppBar to the right when the sidebar is present
+        width: user ? 'calc(100% - 240px)' : '100%',
+        ml: user ? '240px' : 0,
       }}
     >
       <Container maxWidth="lg">

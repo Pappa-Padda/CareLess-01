@@ -380,7 +380,7 @@ export const inputsCustomizations: Components<Theme> = {
       input: {
         padding: 0,
       },
-      root: ({ theme }) => ({
+      root: ({ theme, ownerState }) => ({
         padding: '8px 12px',
         color: (theme.vars || theme).palette.text.primary,
         borderRadius: (theme.vars || theme).shape.borderRadius,
@@ -399,24 +399,14 @@ export const inputsCustomizations: Components<Theme> = {
             borderColor: gray[500],
           },
         }),
-        variants: [
-          {
-            props: {
-              size: 'small',
-            },
-            style: {
-              height: '2.25rem',
-            },
-          },
-          {
-            props: {
-              size: 'medium',
-            },
-            style: {
-              height: '2.5rem',
-            },
-          },
-        ],
+        ...(ownerState.size === 'small' &&
+          !ownerState.multiline && {
+            height: '2.25rem',
+          }),
+        ...(ownerState.size === 'medium' &&
+          !ownerState.multiline && {
+            height: '2.5rem',
+          }),
       }),
       notchedOutline: {
         border: 'none',

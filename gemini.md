@@ -68,8 +68,31 @@ This project is structured as a **Monorepo** using npm workspaces. It separates 
 │       └── src/            # Export shared types here
 │
 ├── .env                    # Single Environment file
-└── package.json            # Root configuration & scripts
+├── package.json            # Root configuration & scripts
 ```
+
+## 🗺️ Application Navigation & Routes
+
+The application is structured around a central sidebar navigation for authenticated users. Below is the mapping of sidebar menu items to their respective route paths:
+
+| Menu Item | Route Path | Description |
+| :--- | :--- | :--- |
+| **Admin Dashboard** | `/admin-dashboard` | System overview and management stats (Admin only). |
+| **Event Management** | `/admin/events` | Create, update, and manage church events (Admin). |
+| **Address Management** | `/addresses` | Manage reusable addresses and locations. |
+| **Groups** | `/groups` | View joined groups, create new ones, or join via ID. |
+| **Profile Setup** | `/profile` | Manage user personal details and preferences. |
+| **Car Management** | `/cars` | Register and manage vehicles for drivers. |
+| **Driver Event List** | `/driver-events` | View events available for drivers to offer rides. |
+| **Offer Ride** | `/offer-ride` | Specific flow for a driver to offer a lift for an event. |
+| **Event List** | `/event-list` | View upcoming events as a passenger. |
+| **Event Details** | `/event-details` | Detailed view of a specific event. |
+| **My Lifts** | `/my-lifts` | View scheduled lifts for the passenger. |
+| **Allocation Console** | `/allocation` | Interface for manual/auto assignment of passengers to drivers. |
+| **Lift Confirmation** | `/confirmation` | Final confirmation details for a booked lift. |
+| **My Event Bookings** | `/bookings` | Dashboard for drivers to see their confirmed passengers. |
+| **Route View** | `/route` | Visual map and route details for a driver. |
+| **Communication Center** | `/chat` | Messaging interface for coordination. |
 
 ## 🚀 Getting Started
 

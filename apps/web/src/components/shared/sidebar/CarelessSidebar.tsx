@@ -3,9 +3,7 @@ import * as React from 'react';
 import { alpha } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import Drawer from '@mui/material/Drawer';
-import Toolbar from '@mui/material/Toolbar';
 import List from '@mui/material/List';
-import Divider from '@mui/material/Divider';
 import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
@@ -26,34 +24,41 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
 import MapIcon from '@mui/icons-material/Map';
 import ChatIcon from '@mui/icons-material/Chat';
+import HomeIcon from '@mui/icons-material/Home';
+import LogoutIcon from '@mui/icons-material/Logout';
+import IconButton from '@mui/material/IconButton';
+import Typography from '@mui/material/Typography';
+import Tooltip from '@mui/material/Tooltip';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
+import ColorModeIconDropdown from '../../shared-theme/ColorModeIconDropdown';
 
 const drawerWidth = 240;
 
 const menuItems = [
-  { text: 'Admin Dashboard', icon: <DashboardIcon /> },
-  { text: 'Event Management', icon: <EventIcon /> },
-  { text: 'Address Management', icon: <LocationOnIcon /> },
-  { text: 'Group Dashboard', icon: <GroupIcon /> },
-  { text: 'Profile Setup', icon: <PersonIcon /> },
-  { text: 'Car Management', icon: <DirectionsCarIcon /> },
-  { text: 'Driver Event List', icon: <ListAltIcon /> },
-  { text: 'Offer Ride', icon: <LocalTaxiIcon /> },
-  { text: 'Event List', icon: <FormatListBulletedIcon /> },
-  { text: 'Event Details', icon: <InfoIcon /> },
-  { text: 'My Lifts', icon: <EmojiTransportationIcon /> },
-  { text: 'Allocation Console', icon: <SettingsSuggestIcon /> },
-  { text: 'Lift Confirmation', icon: <CheckCircleIcon /> },
-  { text: 'My Event Bookings', icon: <BookmarkIcon /> },
-  { text: 'Route View', icon: <MapIcon /> },
-  { text: 'Communication Center', icon: <ChatIcon /> },
+  { text: 'Admin Dashboard', icon: <DashboardIcon />, href: '/admin-dashboard' },
+  { text: 'Event Management', icon: <EventIcon />, href: '/admin/events' },
+  { text: 'Address Management', icon: <LocationOnIcon />, href: '/addresses' },
+  { text: 'Groups', icon: <GroupIcon />, href: '/groups' },
+  { text: 'Profile Setup', icon: <PersonIcon />, href: '/profile' },
+  { text: 'Car Management', icon: <DirectionsCarIcon />, href: '/cars' },
+  { text: 'Driver Event List', icon: <ListAltIcon />, href: '/driver-events' },
+  { text: 'Offer Ride', icon: <LocalTaxiIcon />, href: '/offer-ride' },
+  { text: 'Event List', icon: <FormatListBulletedIcon />, href: '/event-list' },
+  { text: 'Event Details', icon: <InfoIcon />, href: '/event-details' },
+  { text: 'My Lifts', icon: <EmojiTransportationIcon />, href: '/my-lifts' },
+  { text: 'Allocation Console', icon: <SettingsSuggestIcon />, href: '/allocation' },
+  { text: 'Lift Confirmation', icon: <CheckCircleIcon />, href: '/confirmation' },
+  { text: 'My Event Bookings', icon: <BookmarkIcon />, href: '/bookings' },
+  { text: 'Route View', icon: <MapIcon />, href: '/route' },
+  { text: 'Communication Center', icon: <ChatIcon />, href: '/chat' },
 ];
 
 export default function CarelessSidebar() {
-  const [selectedIndex, setSelectedIndex] = React.useState(0);
-
-  const handleListItemClick = (event: React.MouseEvent<HTMLDivElement, MouseEvent>, index: number) => {
-    setSelectedIndex(index);
-  };
+  const pathname = usePathname();
+  const router = useRouter();
+  const { user, logout } = useAuth();
 
   return (
     <Drawer
@@ -70,19 +75,51 @@ export default function CarelessSidebar() {
         },
       }}
     >
-      <Toolbar />
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          px: 1,
+          py: 1,
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          minHeight: '64px',
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, overflow: 'hidden' }}>
+          <Tooltip title="Go Home">
+            <IconButton onClick={() => router.push('/')} size="small">
+              <HomeIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Typography variant="body2" noWrap sx={{ fontWeight: 'bold', maxWidth: '80px' }}>
+            {user?.name || 'User'}
+          </Typography>
+        </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <ColorModeIconDropdown />
+          <Tooltip title="Logout">
+            <IconButton onClick={logout} size="small" color="error">
+              <LogoutIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      </Box>
       <Box sx={{ overflow: 'auto', color: 'text.primary' }}>
         <List>
-          {menuItems.map((item, index) => (
+          {menuItems.map((item) => (
             <ListItem key={item.text} disablePadding>
               <ListItemButton
-                selected={selectedIndex === index}
-                onClick={(event) => handleListItemClick(event, index)}
+                component={Link}
+                href={item.href}
+                selected={pathname === item.href}
                 sx={{
                   mx: 1,
                   borderRadius: 1,
                   '&.Mui-selected': {
                     bgcolor: 'primary.main',
+                    fontWeight: 'bold',
                     '&:hover': {
                       bgcolor: 'primary.dark',
                     },
