@@ -8,6 +8,7 @@ import GroupIcon from '@mui/icons-material/Group';
 import AddIcon from '@mui/icons-material/Add';
 import LoginIcon from '@mui/icons-material/Login';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import PageContainer from '@/components/shared/ui/PageContainer';
 import PageHeading from '@/components/shared/ui/PageHeading';
 import CustomDialog from '@/components/shared/ui/CustomDialog';
 import CustomTextField from '@/components/shared/ui/CustomTextField';
@@ -137,7 +138,7 @@ export default function GroupDashboard() {
   };
 
   return (
-    <Box sx={{ width: '100%' }}>
+    <PageContainer>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <PageHeading>Groups</PageHeading>
         <Box sx={{ display: 'flex', gap: 2 }}>
@@ -250,6 +251,6 @@ export default function GroupDashboard() {
           required
         />
       </CustomDialog>
-    </Box>
+    </PageContainer>
   );
 }
