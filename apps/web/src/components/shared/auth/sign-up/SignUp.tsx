@@ -5,6 +5,8 @@ import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
 import FormLabel from '@mui/material/FormLabel';
 import FormControl from '@mui/material/FormControl';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Checkbox from '@mui/material/Checkbox';
 import Link from '@mui/material/Link';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
@@ -25,6 +27,7 @@ export default function SignUp(props: { disableCustomTheme?: boolean }) {
   const [nameErrorMessage, setNameErrorMessage] = React.useState('');
   const [phoneNumberError, setPhoneNumberError] = React.useState(false);
   const [phoneNumberErrorMessage, setPhoneNumberErrorMessage] = React.useState('');
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const validateInputs = () => {
     const email = document.getElementById('email') as HTMLInputElement;
@@ -84,6 +87,7 @@ export default function SignUp(props: { disableCustomTheme?: boolean }) {
     const password = data.get('password') as string;
     const phoneNumber = data.get('phoneNumber') as string;
 
+    setIsSubmitting(true);
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/signup`, {
         method: 'POST',
@@ -104,6 +108,8 @@ export default function SignUp(props: { disableCustomTheme?: boolean }) {
     } catch (error) {
       console.error('Signup error:', error);
       alert('An unexpected error occurred.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -179,9 +185,15 @@ export default function SignUp(props: { disableCustomTheme?: boolean }) {
           fullWidth
           variant="contained"
           onClick={validateInputs}
+          disabled={isSubmitting}
         >
-          Sign up
+          {isSubmitting ? 'Signing up...' : 'Sign up'}
         </Button>
+        {isSubmitting && (
+          <Typography variant="caption" sx={{ textAlign: 'center', color: 'text.secondary' }}>
+            Creating your account...
+          </Typography>
+        )}
       </Box>
       <Divider>
         <Typography sx={{ color: 'text.secondary' }}>or</Typography>

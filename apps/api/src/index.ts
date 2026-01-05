@@ -3,6 +3,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import userRoutes from './routes/userRoutes';
 import authRoutes from './routes/authRoutes';
+import eventRoutes from './routes/eventRoutes';
 
 const app = express();
 // PORT is automatically set by Render to 10000 or from environment variable
@@ -20,6 +21,7 @@ app.use(cookieParser());
 // Routes
 app.use('/users', userRoutes);
 app.use('/auth', authRoutes);
+app.use('/events', eventRoutes);
 
 app.get('/', (req, res) => {
   res.send('API is running');

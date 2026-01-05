@@ -28,6 +28,7 @@ export default function SignIn(props: SignInProps) {
   const [passwordError, setPasswordError] = React.useState(false);
   const [passwordErrorMessage, setPasswordErrorMessage] = React.useState('');
   const [open, setOpen] = React.useState(false);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const handleClickOpen = () => {
     setOpen(true);
@@ -78,6 +79,7 @@ export default function SignIn(props: SignInProps) {
       return;
     }
 
+    setIsSubmitting(true);
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/signin`, {
         method: 'POST',
@@ -98,6 +100,8 @@ export default function SignIn(props: SignInProps) {
     } catch (error) {
       console.error('Sign in error:', error);
       alert('An unexpected error occurred.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -154,9 +158,15 @@ export default function SignIn(props: SignInProps) {
           fullWidth
           variant="contained"
           onClick={validateInputs}
+          disabled={isSubmitting}
         >
-          Sign in
+          {isSubmitting ? 'Signing in...' : 'Sign in'}
         </Button>
+        {isSubmitting && (
+          <Typography variant="caption" sx={{ textAlign: 'center', color: 'text.secondary' }}>
+            Processing your request...
+          </Typography>
+        )}
         <Link
           component="button"
           type="button"

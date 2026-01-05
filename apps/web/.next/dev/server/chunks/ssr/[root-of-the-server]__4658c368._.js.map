@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 17, "column": 0}, "map": {"version":3,"sources":[],"names":[],"mappings":""}},
-    {"offset": {"line": 21, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/jpret/Documents/Lancea/CareLess-01/apps/web/src/app/page.tsx"],"sourcesContent":["import MarketingPage from '@/components/marketing-page/MarketingPage';\n\nexport default function Home() {\n  return <MarketingPage />;\n}"],"names":[],"mappings":";;;;;AAAA;;;AAEe,SAAS;IACtB,qBAAO,8OAAC,kLAAa;;;;;AACvB"}}]
-}
