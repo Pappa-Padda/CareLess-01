@@ -1,7 +1,8 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { Container, Typography, Button, Box, Alert } from '@mui/material';
+import { Container, Typography, Button, Box } from '@mui/material';
 import { Add } from '@mui/icons-material';
+import ErrorMessage from '@/components/shared/ui/ErrorMessage';
 import EventManagementTable from '@/features/events/components/EventManagementTable';
 import EventFormDialog from '@/features/events/components/EventFormDialog';
 import { eventService } from '@/features/events/services/eventService';
@@ -82,11 +83,7 @@ export default function EventManagementPage() {
         </Button>
       </Box>
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
-      )}
+      <ErrorMessage message={error} onClose={() => setError(null)} />
 
       <EventManagementTable
         events={events}

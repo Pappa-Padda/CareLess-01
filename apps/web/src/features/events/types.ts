@@ -1,10 +1,12 @@
 export interface Event {
-  id: number;
+  id: number | string;
+  realId?: number;
   name: string;
   description?: string;
   date: string; // ISO String
   startTime: string; // ISO String
   endTime: string; // ISO String
+  isRecurring: boolean;
   groupId: number;
   addressId: number;
   address?: {
@@ -14,6 +16,7 @@ export interface Event {
     province: string;
     postalCode: string;
     country: string;
+    link?: string;
     latitude?: number;
     longitude?: number;
   };
@@ -29,6 +32,7 @@ export interface CreateEventDTO {
   date: string;
   startTime: string;
   endTime: string;
+  isRecurring?: boolean;
   groupId: number;
   address: {
     street: string;
@@ -36,6 +40,7 @@ export interface CreateEventDTO {
     province: string;
     postalCode: string;
     country: string;
+    link?: string;
     latitude?: number;
     longitude?: number;
   };

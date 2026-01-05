@@ -22,6 +22,7 @@ import CustomTable, { Column } from '@/components/shared/ui/CustomTable';
 import CustomDialog from '@/components/shared/ui/CustomDialog';
 import SubmitButton from '@/components/shared/ui/SubmitButton';
 import CancelButton from '@/components/shared/ui/CancelButton';
+import AddressForm, { AddressFormData } from '@/components/shared/ui/AddressForm';
 import { useAuth } from '@/context/AuthContext';
 
 interface Address {
@@ -31,15 +32,16 @@ interface Address {
   province: string;
   postalCode: string;
   country: string;
+  link?: string;
   rank?: number;
 }
 
 const addressColumns: Column<Address>[] = [
-  { id: 'street', label: 'Street' },
-  { id: 'city', label: 'City' },
-  { id: 'province', label: 'Province' },
-  { id: 'postalCode', label: 'Postal Code' },
-  { id: 'country', label: 'Country' },
+  { id: 'street', label: 'Street', sortable: true },
+  { id: 'city', label: 'City', sortable: true },
+  { id: 'province', label: 'Province', sortable: true },
+  { id: 'postalCode', label: 'Postal Code', sortable: true },
+  { id: 'country', label: 'Country', sortable: true },
   { id: 'actions', label: 'Actions', align: 'center', width: 100 },
 ];
 
@@ -59,15 +61,20 @@ export default function ProfilePage() {
   // Address State
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [isAddressesLoading, setIsAddressesLoading] = useState(false);
+  const [sortConfig, setSortConfig] = useState<{ key: keyof Address | 'actions'; direction: 'asc' | 'desc' }>({
+    key: 'street',
+    direction: 'asc',
+  });
   
   // Address Dialog State
   const [isAddressDialogOpen, setIsAddressDialogOpen] = useState(false);
-  const [addressFormData, setAddressFormData] = useState({
+  const [addressFormData, setAddressFormData] = useState<AddressFormData>({
     street: '',
     city: '',
     province: '',
     postalCode: '',
     country: '',
+    link: '',
   });
   const [isAddressSubmitting, setIsAddressSubmitting] = useState(false);
 
@@ -80,6 +87,31 @@ export default function ProfilePage() {
       fetchAddresses();
     }
   }, [user]);
+
+  const handleSort = (columnId: keyof Address | 'actions') => {
+    const isAsc = sortConfig.key === columnId && sortConfig.direction === 'asc';
+    setSortConfig({ key: columnId, direction: isAsc ? 'desc' : 'asc' });
+  };
+
+  const sortedAddresses = React.useMemo(() => {
+    if (sortConfig.key === 'actions') return addresses;
+    
+    return [...addresses].sort((a, b) => {
+      const valA = a[sortConfig.key as keyof Address];
+      const valB = b[sortConfig.key as keyof Address];
+
+      if (valA === null || valA === undefined) return 1;
+      if (valB === null || valB === undefined) return -1;
+
+      if (valA < valB) {
+        return sortConfig.direction === 'asc' ? -1 : 1;
+      }
+      if (valA > valB) {
+        return sortConfig.direction === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+  }, [addresses, sortConfig]);
 
   const fetchAddresses = async () => {
     setIsAddressesLoading(true);
@@ -254,9 +286,11 @@ export default function ProfilePage() {
           
           <CustomTable
             columns={addressColumns}
-            data={addresses}
+            data={sortedAddresses}
             isLoading={isAddressesLoading}
             emptyMessage="No addresses found. Add one to get started."
+            sortConfig={sortConfig}
+            onSort={handleSort}
             renderCell={(item, column) => {
               if (column.id === 'actions') {
                 return (
@@ -361,46 +395,10 @@ export default function ProfilePage() {
           </>
         }
       >
-        <CustomTextField
-          id="street"
-          label="Street Address"
-          value={addressFormData.street}
-          onChange={(e) => setAddressFormData({ ...addressFormData, street: e.target.value })}
-          required
-          autoFocus
+        <AddressForm
+          data={addressFormData}
+          onChange={(data) => setAddressFormData(data)}
         />
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-          <CustomTextField
-            id="city"
-            label="City"
-            value={addressFormData.city}
-            onChange={(e) => setAddressFormData({ ...addressFormData, city: e.target.value })}
-            required
-          />
-          <CustomTextField
-            id="province"
-            label="Province/State"
-            value={addressFormData.province}
-            onChange={(e) => setAddressFormData({ ...addressFormData, province: e.target.value })}
-            required
-          />
-        </Stack>
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-          <CustomTextField
-            id="postalCode"
-            label="Postal Code"
-            value={addressFormData.postalCode}
-            onChange={(e) => setAddressFormData({ ...addressFormData, postalCode: e.target.value })}
-            required
-          />
-          <CustomTextField
-            id="country"
-            label="Country"
-            value={addressFormData.country}
-            onChange={(e) => setAddressFormData({ ...addressFormData, country: e.target.value })}
-            required
-          />
-        </Stack>
       </CustomDialog>
     </PageContainer>
   );

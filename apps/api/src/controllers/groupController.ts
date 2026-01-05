@@ -6,18 +6,22 @@ export const getGroups = async (req: Request, res: Response) => {
     const userId = (req as any).user?.userId;
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
+    const adminOnly = req.query.adminOnly === 'true';
     const skip = (page - 1) * limit;
 
     if (!userId) return res.status(401).json({ error: 'Not authenticated' });
 
-    const groups = await prisma.group.findMany({
-      where: {
-        userGroupAssociation: {
-          some: {
-            userId: userId,
-          },
+    const whereClause: any = {
+      userGroupAssociation: {
+        some: {
+          userId: userId,
+          ...(adminOnly && { isAdmin: true }),
         },
       },
+    };
+
+    const groups = await prisma.group.findMany({
+      where: whereClause,
       skip,
       take: limit,
       orderBy: {
@@ -26,13 +30,7 @@ export const getGroups = async (req: Request, res: Response) => {
     });
 
     const total = await prisma.group.count({
-      where: {
-        userGroupAssociation: {
-          some: {
-            userId: userId,
-          },
-        },
-      },
+      where: whereClause,
     });
 
     return res.json({ groups, total, page, limit });
@@ -114,6 +112,88 @@ export const joinGroup = async (req: Request, res: Response) => {
 
     return res.json({ ok: true });
   } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Server error' });
+  }
+};
+
+export const leaveGroup = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.userId;
+    const { groupId } = req.body;
+    const gid = Number(groupId);
+
+    if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+    if (!groupId) return res.status(400).json({ error: 'Group ID is required' });
+
+    await prisma.$transaction(async (tx) => {
+      // Check if association exists
+      const existing = await tx.userGroupAssociation.findUnique({
+        where: {
+          userId_groupId: {
+            userId,
+            groupId: gid,
+          },
+        },
+      });
+
+      if (!existing) {
+        throw new Error('NOT_MEMBER');
+      }
+
+      // If leaving user is an admin
+      if (existing.isAdmin) {
+        // Check if there are other admins
+        const otherAdmins = await tx.userGroupAssociation.findFirst({
+          where: {
+            groupId: gid,
+            userId: { not: userId },
+            isAdmin: true,
+          },
+        });
+
+        // If no other admins, find the next member to promote
+        if (!otherAdmins) {
+          const nextMember = await tx.userGroupAssociation.findFirst({
+            where: {
+              groupId: gid,
+              userId: { not: userId },
+            },
+            orderBy: {
+              userId: 'asc', // Simple fallback ordering
+            },
+          });
+
+          if (nextMember) {
+            await tx.userGroupAssociation.update({
+              where: {
+                userId_groupId: {
+                  userId: nextMember.userId,
+                  groupId: gid,
+                },
+              },
+              data: { isAdmin: true },
+            });
+          }
+        }
+      }
+
+      // Delete the association
+      await tx.userGroupAssociation.delete({
+        where: {
+          userId_groupId: {
+            userId,
+            groupId: gid,
+          },
+        },
+      });
+    });
+
+    return res.json({ ok: true });
+  } catch (err: any) {
+    if (err.message === 'NOT_MEMBER') {
+      return res.status(404).json({ error: 'Not a member of this group' });
+    }
     console.error(err);
     return res.status(500).json({ error: 'Server error' });
   }

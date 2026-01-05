@@ -11,6 +11,17 @@ export const eventService = {
     return res.json();
   },
 
+  getEventById: async (id: number): Promise<Event> => {
+    const res = await fetch(`${API_URL}/events/${id}`, {
+      credentials: 'include',
+    });
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.error || 'Failed to fetch event');
+    }
+    return res.json();
+  },
+
   createEvent: async (data: CreateEventDTO): Promise<Event> => {
     const res = await fetch(`${API_URL}/events`, {
       method: 'POST',

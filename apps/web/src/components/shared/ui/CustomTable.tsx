@@ -8,12 +8,14 @@ import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
+import TableSortLabel from '@mui/material/TableSortLabel';
 
 export interface Column<T> {
   id: keyof T | 'actions';
   label: string;
   align?: 'right' | 'left' | 'center';
   width?: number | string;
+  sortable?: boolean;
 }
 
 interface CustomTableProps<T> {
@@ -22,6 +24,11 @@ interface CustomTableProps<T> {
   isLoading: boolean;
   emptyMessage?: string;
   renderCell: (item: T, column: Column<T>) => React.ReactNode;
+  sortConfig?: {
+    key: keyof T | 'actions';
+    direction: 'asc' | 'desc';
+  };
+  onSort?: (columnId: keyof T | 'actions') => void;
 }
 
 export default function CustomTable<T extends { id: React.Key }>({
@@ -30,15 +37,32 @@ export default function CustomTable<T extends { id: React.Key }>({
   isLoading,
   emptyMessage = 'No items to display.',
   renderCell,
+  sortConfig,
+  onSort,
 }: CustomTableProps<T>) {
   return (
     <TableContainer component={Paper} variant="outlined">
       <Table sx={{ minWidth: 650 }} aria-label="custom table">
-        <TableHead>
+        <TableHead sx={{ borderBottom: '2px solid', borderColor: 'divider' }}>
           <TableRow>
             {columns.map((column) => (
-              <TableCell key={String(column.id)} align={column.align} width={column.width}>
-                {column.label}
+              <TableCell
+                key={String(column.id)}
+                align={column.align}
+                width={column.width}
+                sortDirection={sortConfig?.key === column.id ? sortConfig.direction : false}
+              >
+                {column.sortable && onSort ? (
+                  <TableSortLabel
+                    active={sortConfig?.key === column.id}
+                    direction={sortConfig?.key === column.id ? sortConfig.direction : 'asc'}
+                    onClick={() => onSort(column.id)}
+                  >
+                    {column.label}
+                  </TableSortLabel>
+                ) : (
+                  column.label
+                )}
               </TableCell>
             ))}
           </TableRow>

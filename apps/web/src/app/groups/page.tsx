@@ -2,12 +2,14 @@
 import * as React from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import Avatar from '@mui/material/Avatar';
 import GroupIcon from '@mui/icons-material/Group';
 import AddIcon from '@mui/icons-material/Add';
 import LoginIcon from '@mui/icons-material/Login';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 import PageContainer from '@/components/shared/ui/PageContainer';
 import PageHeading from '@/components/shared/ui/PageHeading';
 import CustomDialog from '@/components/shared/ui/CustomDialog';
@@ -15,6 +17,7 @@ import CustomTextField from '@/components/shared/ui/CustomTextField';
 import SubmitButton from '@/components/shared/ui/SubmitButton';
 import CancelButton from '@/components/shared/ui/CancelButton';
 import CustomTable, { Column } from '@/components/shared/ui/CustomTable';
+import ErrorMessage from '@/components/shared/ui/ErrorMessage';
 
 interface Group {
   id: number;
@@ -32,6 +35,11 @@ export default function GroupDashboard() {
   const [joinOpen, setJoinOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [fileName, setFileName] = React.useState<string>('');
+  const [joinError, setJoinError] = React.useState<string | null>(null);
+  const [sortConfig, setSortConfig] = React.useState<{ key: keyof Group | 'actions'; direction: 'asc' | 'desc' }>({
+    key: 'name',
+    direction: 'asc',
+  });
 
   const fetchGroups = async (pageNum = 1) => {
     setLoading(true);
@@ -55,6 +63,31 @@ export default function GroupDashboard() {
   React.useEffect(() => {
     fetchGroups();
   }, []);
+
+  const handleSort = (columnId: keyof Group | 'actions') => {
+    const isAsc = sortConfig.key === columnId && sortConfig.direction === 'asc';
+    setSortConfig({ key: columnId, direction: isAsc ? 'desc' : 'asc' });
+  };
+
+  const sortedGroups = React.useMemo(() => {
+    if (sortConfig.key === 'actions') return groups;
+    
+    return [...groups].sort((a, b) => {
+      const valA = a[sortConfig.key as keyof Group];
+      const valB = b[sortConfig.key as keyof Group];
+
+      if (valA === null || valA === undefined) return 1;
+      if (valB === null || valB === undefined) return -1;
+
+      if (valA < valB) {
+        return sortConfig.direction === 'asc' ? -1 : 1;
+      }
+      if (valA > valB) {
+        return sortConfig.direction === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+  }, [groups, sortConfig]);
 
   const handleNextPage = () => {
     if ((page * 20) < total) {
@@ -90,6 +123,7 @@ export default function GroupDashboard() {
   const handleJoinGroup = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsSubmitting(true);
+    setJoinError(null);
     const formData = new FormData(event.currentTarget);
     const groupId = formData.get('groupId') as string;
 
@@ -105,19 +139,43 @@ export default function GroupDashboard() {
         fetchGroups(1); // Refresh list
       } else {
         const data = await res.json();
-        alert(data.error || 'Failed to join group');
+        setJoinError(data.error || 'Failed to join group');
       }
     } catch (error) {
       console.error(error);
+      setJoinError('An unexpected error occurred');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleLeaveGroup = async (groupId: number) => {
+    if (!confirm('Are you sure you want to leave this group?')) return;
+
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/groups/leave`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ groupId }),
+      });
+
+      if (res.ok) {
+        fetchGroups(1);
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to leave group');
+      }
+    } catch (error) {
+      console.error('Failed to leave group', error);
     }
   };
   
   const columns: Column<Group>[] = [
     { id: 'profilePicture', label: '', width: 50 },
-    { id: 'name', label: 'Group Name' },
-    { id: 'description', label: 'Description' },
+    { id: 'name', label: 'Group Name', sortable: true },
+    { id: 'description', label: 'Description', sortable: true },
+    { id: 'actions', label: 'Actions', align: 'right', width: 100 },
   ];
 
   const renderCell = (group: Group, column: Column<Group>) => {
@@ -132,6 +190,17 @@ export default function GroupDashboard() {
           : group.description;
       case 'id':
         return <Typography variant="caption" color="text.secondary">#{group.id}</Typography>;
+      case 'actions':
+        return (
+          <IconButton
+            color="error"
+            size="small"
+            onClick={() => handleLeaveGroup(group.id)}
+            title="Leave Group"
+          >
+            <ExitToAppIcon fontSize="small" />
+          </IconButton>
+        );
       default:
         return null;
     }
@@ -153,10 +222,12 @@ export default function GroupDashboard() {
 
       <CustomTable
         columns={columns}
-        data={groups}
+        data={sortedGroups}
         isLoading={loading}
         renderCell={renderCell}
         emptyMessage="You are not a member of any groups yet."
+        sortConfig={sortConfig}
+        onSort={handleSort}
       />
 
       {(page * 20) < total && (
@@ -223,7 +294,7 @@ export default function GroupDashboard() {
       {/* Join Group Modal */}
       <CustomDialog
         open={joinOpen}
-        onClose={() => setJoinOpen(false)}
+        onClose={() => { setJoinOpen(false); setJoinError(null); }}
         title="Join Existing Group"
         component="form"
         onSubmit={handleJoinGroup}
@@ -231,7 +302,7 @@ export default function GroupDashboard() {
         fullWidth
         actions={
           <>
-            <CancelButton onClick={() => setJoinOpen(false)}>Cancel</CancelButton>
+            <CancelButton onClick={() => { setJoinOpen(false); setJoinError(null); }}>Cancel</CancelButton>
             <SubmitButton isSubmitting={isSubmitting} submittingText="Joining...">
               Join
             </SubmitButton>
@@ -241,6 +312,7 @@ export default function GroupDashboard() {
         <Typography variant="body2" color="text.secondary">
           Enter the Group ID to join a community.
         </Typography>
+        <ErrorMessage message={joinError} />
         <CustomTextField
           autoFocus
           id="groupId"

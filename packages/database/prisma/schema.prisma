@@ -26,6 +26,7 @@ model Address {
   province   String   @map("Province")
   postalCode String   @map("Postal_Code")
   country    String   @map("Country")
+  link       String?  @map("Link") @db.Text
   latitude   Decimal? @map("Latitude") @db.Decimal(10, 8)
   longitude  Decimal? @map("Longitude") @db.Decimal(11, 8)
 
@@ -145,6 +146,7 @@ model Event {
   date        DateTime @map("Date") @db.Date
   startTime   DateTime @map("Start_Time") @db.Time
   endTime     DateTime @map("End_Time") @db.Time
+  isRecurring Boolean  @default(false) @map("Is_Recurring")
 
   // Relations
   address  Address         @relation(fields: [addressId], references: [id])
