@@ -131,6 +131,7 @@ model Car {
   model        String @map("Model")
   year         Int    @map("Year")
   licensePlate String @map("License_Plate")
+  color        String @default("White") @map("Color")
   seatCapacity Int    @map("Seat_Capacity")
 
   // Relations

@@ -15,10 +15,11 @@ interface CarTableProps {
 
 export default function CarTable({ cars, isLoading, onEdit, onDelete }: CarTableProps) {
   const columns: Column<Car>[] = [
-    { id: 'make', label: 'Make', width: '20%' },
-    { id: 'model', label: 'Model', width: '20%' },
-    { id: 'year', label: 'Year', width: '15%' },
-    { id: 'licensePlate', label: 'License Plate', width: '20%' },
+    { id: 'make', label: 'Make', width: '15%' },
+    { id: 'model', label: 'Model', width: '15%' },
+    { id: 'color', label: 'Color', width: '15%' },
+    { id: 'year', label: 'Year', width: '10%' },
+    { id: 'licensePlate', label: 'License Plate', width: '15%' },
     { id: 'seatCapacity', label: 'Seats', width: '10%', align: 'right' },
     { id: 'actions', label: 'Actions', align: 'right', width: '15%' },
   ];
@@ -29,6 +30,8 @@ export default function CarTable({ cars, isLoading, onEdit, onDelete }: CarTable
         return car.make;
       case 'model':
         return car.model;
+      case 'color':
+        return car.color;
       case 'year':
         return car.year;
       case 'licensePlate':

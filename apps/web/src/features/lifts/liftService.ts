@@ -90,6 +90,23 @@ export interface DashboardRequestItem {
 
 export type DashboardItem = DashboardAllocationItem | DashboardRequestItem;
 
+export interface DriverDashboardOffer {
+  id: number;
+  date: string;
+  availableSeats: number;
+  notes?: string;
+  event: EventDetails;
+  car: CarDetails;
+  passengers: {
+    id: number;
+    name: string;
+    phoneNumber?: string;
+    profilePicture?: string;
+    isConfirmed: boolean;
+    pickup: PickupDetails;
+  }[];
+}
+
 
 export const liftService = {
   // Requests
@@ -162,6 +179,15 @@ export const liftService = {
       credentials: 'include',
     });
     if (!res.ok) throw new Error('Failed to fetch passenger dashboard');
+    return res.json();
+  },
+
+  // Driver Dashboard
+  getDriverDashboard: async (): Promise<{ offers: DriverDashboardOffer[] }> => {
+    const res = await fetch(`${API_URL}/lift-offers/dashboard`, {
+      credentials: 'include',
+    });
+    if (!res.ok) throw new Error('Failed to fetch driver dashboard');
     return res.json();
   },
 

@@ -23,6 +23,7 @@ export interface Event {
   group?: {
     id: number;
     name: string;
+    profilePicture?: string;
   };
 }
 

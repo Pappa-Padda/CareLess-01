@@ -22,9 +22,9 @@ export const createCar = async (req: Request, res: Response) => {
     const userId = (req as any).user?.userId;
     if (!userId) return res.status(401).json({ error: 'Not authenticated' });
 
-    const { make, model, year, licensePlate, seatCapacity } = req.body;
+    const { make, model, year, licensePlate, color, seatCapacity } = req.body;
 
-    if (!make || !model || !year || !licensePlate || !seatCapacity) {
+    if (!make || !model || !year || !licensePlate || !color || !seatCapacity) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
@@ -51,6 +51,7 @@ export const createCar = async (req: Request, res: Response) => {
         model,
         year: parseInt(year),
         licensePlate,
+        color,
         seatCapacity: parseInt(seatCapacity),
       },
     });
@@ -69,7 +70,7 @@ export const updateCar = async (req: Request, res: Response) => {
 
     if (isNaN(carId)) return res.status(400).json({ error: 'Invalid car ID' });
 
-    const { make, model, year, licensePlate, seatCapacity } = req.body;
+    const { make, model, year, licensePlate, color, seatCapacity } = req.body;
 
     const existingCar = await prisma.car.findUnique({ where: { id: carId } });
     if (!existingCar) return res.status(404).json({ error: 'Car not found' });
@@ -85,6 +86,7 @@ export const updateCar = async (req: Request, res: Response) => {
         model,
         year: year ? parseInt(year) : undefined,
         licensePlate,
+        color,
         seatCapacity: seatCapacity ? parseInt(seatCapacity) : undefined,
       },
     });
@@ -108,6 +110,23 @@ export const deleteCar = async (req: Request, res: Response) => {
 
     if (existingCar.driverId !== userId) {
       return res.status(403).json({ error: 'Not authorized to delete this car' });
+    }
+
+    // Check for active lift offers associated with this car
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const activeOffers = await prisma.liftOffer.findFirst({
+      where: {
+        carId: carId,
+        date: {
+          gte: today,
+        },
+      },
+    });
+
+    if (activeOffers) {
+      return res.status(400).json({ error: 'Cannot delete car. It is assigned to upcoming lift offers.' });
     }
 
     await prisma.car.delete({ where: { id: carId } });

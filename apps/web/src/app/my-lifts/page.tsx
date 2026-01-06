@@ -35,6 +35,7 @@ import {
   DashboardRequestItem,
 } from '@/features/lifts/liftService';
 import { formatTime } from '@/utils/time';
+import { getImageUrl } from '@/utils/images';
 
 export default function MyLiftsPage() {
   const { user } = useAuth();
@@ -166,7 +167,7 @@ export default function MyLiftsPage() {
               <Stack direction="row" justifyContent="space-between" alignItems="center">
                 <Stack direction="row" spacing={2} alignItems="center">
                     <Avatar 
-                        src={item.event.group.profilePicture || undefined}
+                        src={getImageUrl(item.event.group.profilePicture)}
                         alt={item.event.group.name}
                         sx={{ width: 40, height: 40 }}
                     >
@@ -196,7 +197,7 @@ export default function MyLiftsPage() {
                 <Box sx={{ mt: 2 }}>
                   <Typography variant="subtitle1" fontWeight="bold">Ride Details</Typography>
                   <Stack direction="row" alignItems="center" spacing={1} mt={1}>
-                    <Avatar src={item.driver.profilePicture || undefined} sx={{ width: 24, height: 24 }}>
+                    <Avatar src={getImageUrl(item.driver.profilePicture)} sx={{ width: 24, height: 24 }}>
                         <PersonIcon fontSize="small" />
                     </Avatar>
                     <Typography variant="body2">{item.driver.name}</Typography>

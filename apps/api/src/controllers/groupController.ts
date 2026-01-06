@@ -22,6 +22,12 @@ export const getGroups = async (req: Request, res: Response) => {
 
     const groups = await prisma.group.findMany({
       where: whereClause,
+      include: {
+        userGroupAssociation: {
+          where: { userId },
+          select: { isAdmin: true },
+        },
+      },
       skip,
       take: limit,
       orderBy: {
@@ -33,7 +39,17 @@ export const getGroups = async (req: Request, res: Response) => {
       where: whereClause,
     });
 
-    return res.json({ groups, total, page, limit });
+    const formattedGroups = groups.map((g) => ({
+      id: g.id,
+      name: g.name,
+      description: g.description,
+      profilePicture: g.profilePicture,
+      createdAt: g.createdAt,
+      lastUpdated: g.lastUpdated,
+      isAdmin: g.userGroupAssociation[0]?.isAdmin || false,
+    }));
+
+    return res.json({ groups: formattedGroups, total, page, limit });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: 'Server error' });
@@ -195,6 +211,104 @@ export const leaveGroup = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Not a member of this group' });
     }
     console.error(err);
+    return res.status(500).json({ error: 'Server error' });
+  }
+};
+
+export const getGroupMembers = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.userId;
+    const groupId = Number(req.params.id);
+
+    if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+    if (isNaN(groupId)) return res.status(400).json({ error: 'Invalid group ID' });
+
+    // Verify requesting user is a member
+    const membership = await prisma.userGroupAssociation.findUnique({
+      where: {
+        userId_groupId: { userId, groupId },
+      },
+    });
+
+    if (!membership) return res.status(403).json({ error: 'Not a member of this group' });
+
+    const members = await prisma.userGroupAssociation.findMany({
+      where: { groupId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            profilePicture: true,
+            isDriver: true,
+            phoneNumber: true,
+          },
+        },
+      },
+      orderBy: [
+        { isAdmin: 'desc' }, // Admins first
+        { user: { name: 'asc' } },
+      ],
+    });
+
+    const formattedMembers = members.map((m) => ({
+      userId: m.userId,
+      name: m.user.name,
+      profilePicture: m.user.profilePicture,
+      isDriver: m.user.isDriver,
+      phoneNumber: m.user.phoneNumber,
+      isAdmin: m.isAdmin,
+    }));
+
+    return res.json({ members: formattedMembers });
+  } catch (err) {
+    console.error('Error fetching group members:', err);
+    return res.status(500).json({ error: 'Failed to fetch members' });
+  }
+};
+
+export const updateGroup = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.userId;
+    const { id } = req.params;
+    const { name, description } = req.body;
+    let profilePicture = req.body.profilePicture;
+
+    if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+    if (!id) return res.status(400).json({ error: 'Group ID is required' });
+
+    // Verify admin status
+    const membership = await prisma.userGroupAssociation.findUnique({
+      where: {
+        userId_groupId: {
+          userId,
+          groupId: Number(id),
+        },
+      },
+    });
+
+    if (!membership || !membership.isAdmin) {
+      return res.status(403).json({ error: 'Not authorized to update this group' });
+    }
+
+    if ((req as any).file) {
+      const file = (req as any).file;
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+      profilePicture = `${apiUrl}/uploads/${file.filename}`;
+    }
+
+    const updatedGroup = await prisma.group.update({
+      where: { id: Number(id) },
+      data: {
+        name,
+        description,
+        ...(profilePicture && { profilePicture }),
+      },
+    });
+
+    return res.json({ group: updatedGroup });
+  } catch (err) {
+    console.error('Error updating group:', err);
     return res.status(500).json({ error: 'Server error' });
   }
 };

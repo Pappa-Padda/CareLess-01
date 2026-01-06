@@ -17,6 +17,78 @@ export const getMyOffers = async (req: Request, res: Response) => {
   }
 };
 
+export const getDriverDashboard = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.userId;
+    if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    const offers = await prisma.liftOffer.findMany({
+      where: {
+        driverId: userId,
+        date: {
+          gte: now,
+        },
+      },
+      include: {
+        event: {
+          include: {
+            address: true,
+            group: {
+              select: { name: true, profilePicture: true },
+            },
+          },
+        },
+        car: true,
+        allocations: {
+          include: {
+            passenger: {
+              include: {
+                user: {
+                  select: { name: true, phoneNumber: true, profilePicture: true },
+                },
+              },
+            },
+            pickup: {
+              include: {
+                address: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        date: 'asc',
+      },
+    });
+
+    // Transform for easier frontend consumption
+    const dashboardItems = offers.map(offer => ({
+      id: offer.id,
+      date: offer.date,
+      availableSeats: offer.availableSeats,
+      notes: offer.notes,
+      event: offer.event,
+      car: offer.car,
+      passengers: offer.allocations.map(alloc => ({
+        id: alloc.passengerId,
+        name: alloc.passenger.user.name,
+        phoneNumber: alloc.passenger.user.phoneNumber,
+        profilePicture: alloc.passenger.user.profilePicture,
+        isConfirmed: alloc.isConfirmed,
+        pickup: alloc.pickup,
+      })),
+    }));
+
+    return res.json({ offers: dashboardItems });
+  } catch (err) {
+    console.error('Error fetching driver dashboard:', err);
+    return res.status(500).json({ error: 'Failed to fetch driver dashboard' });
+  }
+};
+
 export const createLiftOffer = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.userId;

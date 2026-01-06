@@ -5,6 +5,7 @@ export interface Car {
   model: string;
   year: number;
   licensePlate: string;
+  color: string;
   seatCapacity: number;
 }
 
@@ -13,6 +14,7 @@ export interface CreateCarDTO {
   model: string;
   year: number;
   licensePlate: string;
+  color: string;
   seatCapacity: number;
 }
 

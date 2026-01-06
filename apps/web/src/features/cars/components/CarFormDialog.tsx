@@ -26,6 +26,7 @@ export default function CarFormDialog({
     model: '',
     year: new Date().getFullYear(),
     licensePlate: '',
+    color: '',
     seatCapacity: 5,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -38,6 +39,7 @@ export default function CarFormDialog({
           model: initialData.model,
           year: initialData.year,
           licensePlate: initialData.licensePlate,
+          color: initialData.color || '',
           seatCapacity: initialData.seatCapacity,
         });
       } else {
@@ -46,6 +48,7 @@ export default function CarFormDialog({
           model: '',
           year: new Date().getFullYear(),
           licensePlate: '',
+          color: '',
           seatCapacity: 5,
         });
       }
@@ -148,15 +151,26 @@ export default function CarFormDialog({
           />
         </Stack>
 
-        <CustomTextField
-          id="licensePlate"
-          name="licensePlate"
-          label="License Plate"
-          placeholder="e.g. ABC 123 GP"
-          value={formData.licensePlate}
-          onChange={handleChange}
-          required
-        />
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+          <CustomTextField
+            id="licensePlate"
+            name="licensePlate"
+            label="License Plate"
+            placeholder="e.g. ABC 123 GP"
+            value={formData.licensePlate}
+            onChange={handleChange}
+            required
+          />
+          <CustomTextField
+            id="color"
+            name="color"
+            label="Color"
+            placeholder="e.g. White"
+            value={formData.color}
+            onChange={handleChange}
+            required
+          />
+        </Stack>
       </Stack>
     </CustomDialog>
   );

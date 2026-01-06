@@ -4,12 +4,14 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
+import Stack from '@mui/material/Stack';
 import Avatar from '@mui/material/Avatar';
 import GroupIcon from '@mui/icons-material/Group';
 import AddIcon from '@mui/icons-material/Add';
 import LoginIcon from '@mui/icons-material/Login';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
+import { useRouter } from 'next/navigation';
 import PageContainer from '@/components/shared/ui/PageContainer';
 import PageHeading from '@/components/shared/ui/PageHeading';
 import CustomDialog from '@/components/shared/ui/CustomDialog';
@@ -18,21 +20,28 @@ import SubmitButton from '@/components/shared/ui/SubmitButton';
 import CancelButton from '@/components/shared/ui/CancelButton';
 import CustomTable, { Column } from '@/components/shared/ui/CustomTable';
 import ErrorMessage from '@/components/shared/ui/ErrorMessage';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import EditIcon from '@mui/icons-material/Edit';
+import { getImageUrl } from '@/utils/images';
 
 interface Group {
   id: number;
   name: string;
   description: string | null;
   profilePicture: string | null;
+  isAdmin: boolean;
 }
 
 export default function GroupDashboard() {
+  const router = useRouter();
   const [groups, setGroups] = React.useState<Group[]>([]);
   const [page, setPage] = React.useState(1);
   const [total, setTotal] = React.useState(0);
   const [loading, setLoading] = React.useState(true);
   const [createOpen, setCreateOpen] = React.useState(false);
   const [joinOpen, setJoinOpen] = React.useState(false);
+  const [editOpen, setEditOpen] = React.useState(false);
+  const [selectedGroup, setSelectedGroup] = React.useState<Group | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [fileName, setFileName] = React.useState<string>('');
   const [joinError, setJoinError] = React.useState<string | null>(null);
@@ -120,6 +129,35 @@ export default function GroupDashboard() {
     }
   };
 
+  const handleUpdateGroup = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!selectedGroup) return;
+
+    setIsSubmitting(true);
+    const formData = new FormData(event.currentTarget);
+
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/groups/${selectedGroup.id}`, {
+        method: 'PUT',
+        credentials: 'include',
+        body: formData,
+      });
+      if (res.ok) {
+        setEditOpen(false);
+        setSelectedGroup(null);
+        setFileName('');
+        fetchGroups(page); // Refresh list
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to update group');
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleJoinGroup = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsSubmitting(true);
@@ -175,13 +213,13 @@ export default function GroupDashboard() {
     { id: 'profilePicture', label: '', width: 50 },
     { id: 'name', label: 'Group Name', sortable: true },
     { id: 'description', label: 'Description', sortable: true },
-    { id: 'actions', label: 'Actions', align: 'right', width: 100 },
+    { id: 'actions', label: 'Actions', align: 'right', width: 150 },
   ];
 
   const renderCell = (group: Group, column: Column<Group>) => {
     switch (column.id) {
       case 'profilePicture':
-        return <Avatar src={group.profilePicture || undefined}><GroupIcon /></Avatar>;
+        return <Avatar src={getImageUrl(group.profilePicture) || undefined} alt={group.name}><GroupIcon /></Avatar>;
       case 'name':
         return <Typography sx={{ fontWeight: 'medium' }}>{group.name}</Typography>;
       case 'description':
@@ -192,14 +230,34 @@ export default function GroupDashboard() {
         return <Typography variant="caption" color="text.secondary">#{group.id}</Typography>;
       case 'actions':
         return (
-          <IconButton
-            color="error"
-            size="small"
-            onClick={() => handleLeaveGroup(group.id)}
-            title="Leave Group"
-          >
-            <ExitToAppIcon fontSize="small" />
-          </IconButton>
+          <Stack direction="row" spacing={1} justifyContent="flex-end">
+            <IconButton
+                color="primary"
+                size="small"
+                onClick={() => router.push(`/groups/${group.id}/members`)}
+                title="View Members"
+            >
+                <VisibilityIcon fontSize="small" />
+            </IconButton>
+            {group.isAdmin && (
+                <IconButton
+                    color="default"
+                    size="small"
+                    onClick={() => { setSelectedGroup(group); setEditOpen(true); }}
+                    title="Edit Group"
+                >
+                    <EditIcon fontSize="small" />
+                </IconButton>
+            )}
+            <IconButton
+                color="error"
+                size="small"
+                onClick={() => handleLeaveGroup(group.id)}
+                title="Leave Group"
+            >
+                <ExitToAppIcon fontSize="small" />
+            </IconButton>
+          </Stack>
         );
       default:
         return null;
@@ -279,6 +337,61 @@ export default function GroupDashboard() {
             startIcon={<CloudUploadIcon />}
           >
             Upload Picture
+            <input
+              type="file"
+              name="profilePicture"
+              hidden
+              accept="image/*"
+              onChange={(e) => setFileName(e.target.files?.[0]?.name || '')}
+            />
+          </Button>
+          {fileName && <Typography variant="caption">{fileName}</Typography>}
+        </Box>
+      </CustomDialog>
+
+      {/* Edit Group Modal */}
+      <CustomDialog
+        open={editOpen}
+        onClose={() => { setEditOpen(false); setSelectedGroup(null); setFileName(''); }}
+        title="Edit Group"
+        component="form"
+        onSubmit={handleUpdateGroup}
+        maxWidth="sm"
+        fullWidth
+        actions={
+          <>
+            <CancelButton onClick={() => { setEditOpen(false); setSelectedGroup(null); setFileName(''); }}>Cancel</CancelButton>
+            <SubmitButton isSubmitting={isSubmitting} submittingText="Updating...">
+              Update
+            </SubmitButton>
+          </>
+        }
+      >
+        <CustomTextField
+          autoFocus
+          id="name"
+          name="name"
+          label="Group Name"
+          placeholder="e.g. My Church"
+          defaultValue={selectedGroup?.name}
+          required
+        />
+        <CustomTextField
+          id="description"
+          name="description"
+          label="Description"
+          placeholder="Briefly describe the group"
+          defaultValue={selectedGroup?.description || ''}
+          multiline
+          rows={3}
+        />
+        <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Button
+            component="label"
+            variant="outlined"
+            startIcon={<CloudUploadIcon />}
+          >
+            Update Picture
             <input
               type="file"
               name="profilePicture"

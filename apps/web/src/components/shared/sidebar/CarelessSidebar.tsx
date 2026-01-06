@@ -51,7 +51,7 @@ const menuItems: MenuItem[] = [
 
   { kind: 'header', title: 'Driver Core' },
   { kind: 'item', text: 'Car Management', icon: <DirectionsCarIcon />, href: '/cars' },
-  { kind: 'item', text: 'My Event Bookings', icon: <BookmarkIcon />, href: '/bookings' },
+  { kind: 'item', text: 'My Lift Offers', icon: <LocalTaxiIcon />, href: '/lift-offers' },
   { kind: 'item', text: 'Route View', icon: <MapIcon />, href: '/route' },
 
   { kind: 'header', title: 'Admin Management' },

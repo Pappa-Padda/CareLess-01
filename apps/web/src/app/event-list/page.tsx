@@ -34,6 +34,7 @@ import { Event } from '@/features/events/types';
 import { Car } from '@/features/cars/types';
 import { useAuth } from '@/context/AuthContext';
 import { formatTime } from '@/utils/time';
+import { getImageUrl } from '@/utils/images';
 
 interface Group {
   id: number;
@@ -126,12 +127,13 @@ export default function EventListPage() {
       if (!acc[groupId]) {
         acc[groupId] = {
           groupName: event.group?.name || 'Unassigned',
+          groupProfilePicture: event.group?.profilePicture,
           events: [],
         };
       }
       acc[groupId].events.push(event);
       return acc;
-    }, {} as Record<string, { groupName: string; events: Event[] }>);
+    }, {} as Record<string, { groupName: string; groupProfilePicture?: string; events: Event[] }>);
   }, [events, sortConfig]);
 
   const fetchEvents = useCallback(async () => {
@@ -375,7 +377,13 @@ export default function EventListPage() {
           {Object.entries(sortedAndGroupedEvents).map(([groupId, groupData]) => (
             <Paper key={groupId} variant="outlined">
               <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
-                <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.light' }}>{groupData.groupName.charAt(0)}</Avatar>
+                <Avatar 
+                    src={getImageUrl(groupData.groupProfilePicture)}
+                    alt={groupData.groupName}
+                    sx={{ width: 32, height: 32, bgcolor: 'primary.light' }}
+                >
+                    {groupData.groupName.charAt(0)}
+                </Avatar>
                 <Typography variant="h6">{groupData.groupName}</Typography>
               </Box>
               <CustomTable
