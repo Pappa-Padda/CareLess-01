@@ -1,5 +1,13 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalEnv": [
+    "DATABASE_URL",
+    "NEXT_PUBLIC_API_URL",
+    "FRONTEND_URL",
+    "API_PORT",
+    "JWT_SECRET",
+    "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
