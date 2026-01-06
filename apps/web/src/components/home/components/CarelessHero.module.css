@@ -12,14 +12,14 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-top: 112px; /* theme.spacing(14) approx */
-  padding-bottom: 64px; /* theme.spacing(8) approx */
+  padding-top: 80px; /* Reduced from 112px */
+  padding-bottom: 32px; /* Reduced from 64px */
 }
 
 @media (min-width: 600px) {
   .heroContainer {
-    padding-top: 160px; /* theme.spacing(20) approx */
-    padding-bottom: 96px; /* theme.spacing(12) approx */
+    padding-top: 100px; /* Reduced from 160px */
+    padding-bottom: 48px; /* Reduced from 96px */
   }
 }
 
@@ -88,7 +88,7 @@
   grid-template-columns: 1fr;
   gap: 16px;
   width: 100%;
-  margin-top: 16px;
+  margin-top: 8px; /* Reduced from 16px */
 }
 
 @media (min-width: 600px) {
@@ -108,7 +108,7 @@
   flex-direction: column; /* Changed to column to stack title and reason */
   align-items: flex-start; /* Align left */
   gap: 8px;
-  padding: 16px;
+  padding: 12px; /* Reduced from 16px */
   border-radius: 8px;
   border: 1px solid var(--mui-palette-divider);
   background-color: var(--mui-palette-background-paper);
@@ -148,7 +148,7 @@
 }
 
 .buttonStack {
-  padding-top: 16px;
+  padding-top: 8px; /* Reduced from 16px */
   width: 100%;
 }
 

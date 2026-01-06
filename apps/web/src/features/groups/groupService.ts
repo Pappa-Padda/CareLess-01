@@ -1,6 +1,7 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export interface GroupMember {
+  id: number;
   userId: number;
   name: string;
   profilePicture: string | null;

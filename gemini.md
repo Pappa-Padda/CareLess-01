@@ -182,7 +182,11 @@ This project primarily uses **Material UI (MUI)** for components and theming, wi
 
 ### 4. Layout
 - **Responsive Design:** Use MUI's responsive syntax in `sx` (e.g., `width: { xs: '100%', md: '50%' }`) or media queries in CSS Modules.
-- **Grid & Stack:** Prefer MUI's `<Stack>` for linear layouts and CSS Grid (via CSS Modules) for complex 2D layouts.
+- **Grid (MUI v6+):** Use the new Grid system.
+  - Do NOT use the `item` prop.
+  - Use the `size` prop for breakpoints: `<Grid size={{ xs: 12, md: 6 }}>`.
+  - Use `<Grid container>` for parent wrappers.
+- **Stack:** Prefer MUI's `<Stack>` for linear layouts and CSS Grid (via CSS Modules) for complex 2D layouts.
 - **Page Wrapper:** Always use the `PageContainer` component (`src/components/shared/ui/PageContainer.tsx`) to wrap top-level pages for consistent padding, alignment, and max-width.
 
 ### 5. Standard UI Components
@@ -190,8 +194,10 @@ Always check `apps/web/src/components/shared/ui` before creating new primitive e
 - `PageHeading`: Standard H1-style heading.
 - `CustomTextField`: Outlined text input with integrated labels.
 - `CustomTable`: Standardized data table with loading states.
+  - **IMPORTANT:** All data objects passed to the table MUST include a unique `id` property (e.g., `id: number | string`). If the backend returns `userId` or `uuid`, map it to `id` before passing to the component.
 - `CustomDialog`: Reusable modal for forms and confirmations.
 - `SubmitButton` / `CancelButton`: Consistent action buttons.
+- `IconButton`: Use for icon-only actions. Note: `IconButton` does NOT support the `variant` prop.
 
 ## 💻 Coding Standards & Best Practices
 

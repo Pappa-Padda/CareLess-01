@@ -175,7 +175,7 @@ export default function MyLiftOffersPage() {
 
               <Grid container>
                 {/* Left Column: Car & Info */}
-                <Grid item xs={12} md={4} sx={{ p: 2, borderRight: { md: '1px solid' }, borderColor: 'divider' }}>
+                <Grid size={{ xs: 12, md: 4 }} sx={{ p: 2, borderRight: { md: '1px solid' }, borderColor: 'divider' }}>
                     <Typography variant="subtitle2" color="text.secondary" gutterBottom>LOGISTICS</Typography>
                     
                     <Stack spacing={2} sx={{ mt: 1 }}>
@@ -215,7 +215,7 @@ export default function MyLiftOffersPage() {
                 </Grid>
 
                 {/* Right Column: Passengers */}
-                <Grid item xs={12} md={8} sx={{ p: 2 }}>
+                <Grid size={{ xs: 12, md: 8 }} sx={{ p: 2 }}>
                     <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                         PASSENGERS ({offer.passengers.length})
                     </Typography>
@@ -270,7 +270,6 @@ export default function MyLiftOffersPage() {
                                                         component="a" 
                                                         href={`tel:${p.phoneNumber}`}
                                                         size="small"
-                                                        variant="contained"
                                                         sx={{ bgcolor: alpha('#1976d2', 0.1) }}
                                                     >
                                                         <PhoneIcon />

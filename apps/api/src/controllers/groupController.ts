@@ -252,6 +252,7 @@ export const getGroupMembers = async (req: Request, res: Response) => {
     });
 
     const formattedMembers = members.map((m) => ({
+      id: m.userId,
       userId: m.userId,
       name: m.user.name,
       profilePicture: m.user.profilePicture,
