@@ -18,12 +18,15 @@ export const signin = async (req: Request, res: Response) => {
 
     const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, { expiresIn: '1h' });
 
-    const isProd = process.env.NODE_ENV === 'production';
+    // Use a more robust production check
+    const isProd = process.env.NODE_ENV === 'production' || process.env.RENDER === 'true';
+    
     res.cookie('token', token, {
       httpOnly: true,
-      secure: isProd,
-      sameSite: isProd ? 'none' : 'lax',
+      secure: true, // Always true for cross-site cookies in modern browsers
+      sameSite: 'none', // Required for Vercel -> Render communication
       maxAge: 1000 * 60 * 60,
+      path: '/',
     });
 
     return res.json({ ok: true });
@@ -59,12 +62,15 @@ export const signup = async (req: Request, res: Response) => {
 
     const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, { expiresIn: '1h' });
 
-    const isProd = process.env.NODE_ENV === 'production';
+    // Use a more robust production check
+    const isProd = process.env.NODE_ENV === 'production' || process.env.RENDER === 'true';
+    
     res.cookie('token', token, {
       httpOnly: true,
-      secure: isProd,
-      sameSite: isProd ? 'none' : 'lax',
+      secure: true, // Always true for cross-site cookies in modern browsers
+      sameSite: 'none', // Required for Vercel -> Render communication
       maxAge: 1000 * 60 * 60,
+      path: '/',
     });
 
     return res.json({ ok: true, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
@@ -75,11 +81,11 @@ export const signup = async (req: Request, res: Response) => {
 };
 
 export const signout = async (_req: Request, res: Response) => {
-  const isProd = process.env.NODE_ENV === 'production';
   res.clearCookie('token', {
     httpOnly: true,
-    secure: isProd,
-    sameSite: isProd ? 'none' : 'lax',
+    secure: true,
+    sameSite: 'none',
+    path: '/',
   });
   res.json({ ok: true });
 };
