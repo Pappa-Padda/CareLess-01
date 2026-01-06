@@ -23,6 +23,16 @@ This project is structured as a **Monorepo** using npm workspaces. It separates 
     - **Backend:** Functional Sign In, Sign Up, and Sign Out endpoints with JWT (stored in httpOnly cookies).
     - **Frontend:** Global `AuthContext` providing user state and actions across the app.
     - **Persistence:** Dynamic header updates (Name/Logout vs Sign In/Up) based on session.
+- [x] **Driver Core:**
+    - **Car Management:** Complete CRUD interface for drivers to manage their vehicles (`/cars`).
+    - **Event Integration:** Drivers can see "Offer Lift" options in the Event List, enabled only for registered drivers.
+- [x] **Passenger Core:**
+    - **Backend Support:** `LiftRequest` model added.
+    - **Event Integration:** Passengers can see "Request Lift" options in the Event List (toggle logic implemented).
+- [x] **Database Updates:**
+    - Renamed `DriverBooking` to `LiftOffer`.
+    - Added `LiftRequest` model for passenger ride requests.
+    - Updated `PassengerAllocation` to link with `LiftOffer`.
 
 ### Current Focus
 - Polishing Frontend UI/UX.
@@ -92,8 +102,6 @@ The application is structured around a central sidebar navigation for authentica
 | Menu Item | Route Path | Description |
 | :--- | :--- | :--- |
 | **Car Management** | `/cars` | Register and manage vehicles for drivers. |
-| **Driver Event List** | `/driver-events` | View events available for drivers to offer rides. |
-| **Offer Ride** | `/offer-ride` | Specific flow for a driver to offer a lift for an event. |
 | **My Event Bookings** | `/bookings` | Dashboard for drivers to see their confirmed passengers. |
 | **Route View** | `/route` | Visual map and route details for a driver. |
 

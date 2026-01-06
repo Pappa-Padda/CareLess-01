@@ -84,7 +84,7 @@ model Driver {
   // Relations
   user           User            @relation(fields: [id], references: [id], onDelete: Cascade)
   cars           Car[]
-  driverBookings DriverBooking[]
+  liftOffers     LiftOffer[]
 }
 
 // 1:1 Relation with User (Inheritance Pattern)
@@ -94,6 +94,7 @@ model Passenger {
   // Relations
   user        User                  @relation(fields: [id], references: [id], onDelete: Cascade)
   allocations PassengerAllocation[]
+  liftRequests LiftRequest[]
 }
 
 model Group {
@@ -134,7 +135,7 @@ model Car {
 
   // Relations
   driver   Driver          @relation(fields: [driverId], references: [id], onDelete: Cascade)
-  bookings DriverBooking[]
+  liftOffers LiftOffer[]
 }
 
 model Event {
@@ -151,13 +152,15 @@ model Event {
   // Relations
   address  Address         @relation(fields: [addressId], references: [id])
   group    Group           @relation(fields: [groupId], references: [id])
-  bookings DriverBooking[]
+  liftOffers LiftOffer[]
+  liftRequests LiftRequest[]
 }
 
-model DriverBooking {
-  id             Int     @id @default(autoincrement()) @map("Driver_Booking_ID")
+model LiftOffer {
+  id             Int     @id @default(autoincrement()) @map("Lift_Offer_ID")
   driverId       Int     @map("Driver_ID")
   eventId        Int     @map("Event_ID")
+  date           DateTime @map("Date") @db.Date
   carId          Int     @map("Car_ID")
   availableSeats Int     @map("Available_Seats")
   isReturning    Boolean @default(false) @map("Is_Returning")
@@ -169,7 +172,7 @@ model DriverBooking {
   car         Car                   @relation(fields: [carId], references: [id])
   allocations PassengerAllocation[]
 
-  @@map("Driver_Booking")
+  @@map("Lift_Offer")
 }
 
 model Pickup {
@@ -184,17 +187,38 @@ model Pickup {
 }
 
 model PassengerAllocation {
-  driverBookingId Int     @map("Driver_Booking_ID")
+  liftOfferId     Int     @map("Lift_Offer_ID")
   passengerId     Int     @map("Passenger_ID")
   pickupId        Int     @map("Pickup_ID")
   isReturning     Boolean @default(false) @map("Is_Returning")
 
   // Relations
-  booking   DriverBooking @relation(fields: [driverBookingId], references: [id], onDelete: Cascade)
+  liftOffer LiftOffer     @relation(fields: [liftOfferId], references: [id], onDelete: Cascade)
   passenger Passenger     @relation(fields: [passengerId], references: [id], onDelete: Cascade)
   pickup    Pickup        @relation(fields: [pickupId], references: [id])
 
   // Composite Primary Key
-  @@id([driverBookingId, passengerId])
+  @@id([liftOfferId, passengerId])
   @@map("Passenger_Allocation")
+}
+
+model LiftRequest {
+  id        Int      @id @default(autoincrement()) @map("Lift_Request_ID")
+  passengerId Int    @map("Passenger_ID")
+  eventId   Int      @map("Event_ID")
+  date      DateTime @map("Date") @db.Date
+  status    RequestStatus @default(PENDING) @map("Status")
+  createdAt DateTime @default(now()) @map("Created_At")
+
+  passenger Passenger @relation(fields: [passengerId], references: [id], onDelete: Cascade)
+  event     Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  
+  @@unique([passengerId, eventId, date]) 
+  @@map("Lift_Request")
+}
+
+enum RequestStatus {
+  PENDING
+  ASSIGNED
+  CANCELLED
 }

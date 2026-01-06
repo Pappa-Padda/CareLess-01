@@ -9,6 +9,7 @@ interface User {
   phoneNumber?: string;
   profilePicture?: string;
   role: string;
+  isDriver?: boolean;
 }
 
 interface AuthContextType {

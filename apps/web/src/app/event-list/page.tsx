@@ -10,6 +10,7 @@ import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Checkbox from '@mui/material/Checkbox';
+import ButtonGroup from '@mui/material/ButtonGroup';
 import { useRouter } from 'next/navigation';
 
 import PageContainer from '@/components/shared/ui/PageContainer';
@@ -22,8 +23,14 @@ import CancelButton from '@/components/shared/ui/CancelButton';
 import ErrorMessage from '@/components/shared/ui/ErrorMessage';
 import InfoMessage from '@/components/shared/ui/InfoMessage';
 import AddressForm, { AddressFormData } from '@/components/shared/ui/AddressForm';
+import CarSelectionDialog from '@/features/lifts/components/CarSelectionDialog';
+
 import { eventService } from '@/features/events/services/eventService';
+import { carService } from '@/features/cars/carService';
+import { liftService } from '@/features/lifts/liftService';
 import { Event } from '@/features/events/types';
+import { Car } from '@/features/cars/types';
+import { useAuth } from '@/context/AuthContext';
 
 interface Group {
   id: number;
@@ -36,7 +43,7 @@ const columns: Column<Event>[] = [
   { id: 'name', label: 'Event Name', sortable: true },
   { id: 'groupId', label: 'Group', sortable: true },
   { id: 'address', label: 'Location' },
-  { id: 'actions', label: 'Actions', align: 'right', width: 150 },
+  { id: 'actions', label: 'Actions', align: 'right', width: 320 },
 ];
 
 const defaultAddress: AddressFormData = {
@@ -50,12 +57,22 @@ const defaultAddress: AddressFormData = {
 
 export default function EventListPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [events, setEvents] = useState<Event[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [pageError, setPageError] = useState<string | null>(null);
   
-  // Dialog State
+  // Lifts Logic
+  const [cars, setCars] = useState<Car[]>([]);
+  const [eventStatus, setEventStatus] = useState<Record<string, 'offered' | 'requested' | null>>({}); // Key is virtual ID (string)
+  const [processingEvents, setProcessingEvents] = useState<Record<string, boolean>>({});
+  
+  // Car Selection Dialog
+  const [carDialogOpen, setCarDialogOpen] = useState(false);
+  const [selectedEventForOffer, setSelectedEventForOffer] = useState<{ id: number, date: string } | null>(null);
+
+  // Create Event Dialog State
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -74,6 +91,33 @@ export default function EventListPage() {
     key: 'date',
     direction: 'asc',
   });
+
+  const sortedEvents = useMemo(() => {
+    return [...events].sort((a, b) => {
+      if (sortConfig.key === 'groupId') {
+        const valA = a.group?.name || '';
+        const valB = b.group?.name || '';
+        return sortConfig.direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+      }
+
+      const key = sortConfig.key as keyof Event;
+      const valA = a[key];
+      const valB = b[key];
+
+      if (valA === null || valA === undefined) return 1;
+      if (valB === null || valB === undefined) return -1;
+
+      if (typeof valA === 'string' && typeof valB === 'string') {
+        return sortConfig.direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+      }
+
+      if (typeof valA === 'number' && typeof valB === 'number') {
+        return sortConfig.direction === 'asc' ? valA - valB : valB - valA;
+      }
+
+      return 0;
+    });
+  }, [events, sortConfig]);
 
   const fetchEvents = useCallback(async () => {
     setIsLoading(true);
@@ -103,42 +147,145 @@ export default function EventListPage() {
     }
   }, []);
 
+  const fetchUserData = useCallback(async () => {
+    if (!user) return;
+    
+    try {
+        const getVirtualId = (eventId: number, dateStr: string) => {
+             const d = new Date(dateStr).toISOString().split('T')[0];
+             return `${eventId}_${d}`;
+        };
+
+        if (user.isDriver) {
+            const { cars } = await carService.getCars();
+            setCars(cars);
+            
+            const { offers } = await liftService.getMyOffers();
+            setEventStatus(prev => {
+                const newStatus = { ...prev };
+                offers.forEach(o => {
+                    const vid = getVirtualId(o.eventId, o.date);
+                    newStatus[vid] = 'offered';
+                });
+                return newStatus;
+            });
+        }
+
+        const { requests } = await liftService.getMyRequests();
+         setEventStatus(prev => {
+            const newStatus = { ...prev };
+            requests.forEach(r => {
+                const vid = getVirtualId(r.eventId, r.date);
+                newStatus[vid] = 'requested';
+            });
+            return newStatus;
+        });
+
+    } catch (err) {
+        console.error('Failed to fetch user lift data', err);
+    }
+  }, [user]);
+
   useEffect(() => {
     fetchEvents();
     fetchAdminGroups();
   }, [fetchEvents, fetchAdminGroups]);
+
+  useEffect(() => {
+    fetchUserData();
+  }, [fetchUserData]);
 
   const handleSort = (columnId: keyof Event | 'actions') => {
     const isAsc = sortConfig.key === columnId && sortConfig.direction === 'asc';
     setSortConfig({ key: columnId, direction: isAsc ? 'desc' : 'asc' });
   };
 
-  const sortedEvents = useMemo(() => {
-    return [...events].sort((a, b) => {
-      if (sortConfig.key === 'groupId') {
-        const valA = a.group?.name || '';
-        const valB = b.group?.name || '';
-        return sortConfig.direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
-      }
+  const handleRequestLift = async (event: Event) => {
+    const virtualId = String(event.id);
+    if (processingEvents[virtualId]) return;
 
-      const key = sortConfig.key as keyof Event;
-      const valA = a[key];
-      const valB = b[key];
+    const realId = event.realId || Number(event.id); 
+    const dateStr = new Date(event.date).toISOString().split('T')[0];
+    const currentStatus = eventStatus[virtualId];
+    
+    setProcessingEvents(prev => ({ ...prev, [virtualId]: true }));
+    
+    // Optimistic Update
+    const newStatus = currentStatus === 'requested' ? null : 'requested';
+    setEventStatus(prev => ({ ...prev, [virtualId]: newStatus }));
 
-      if (valA === null || valA === undefined) return 1;
-      if (valB === null || valB === undefined) return -1;
+    try {
+        if (currentStatus === 'requested') {
+            await liftService.deleteRequest(realId, dateStr);
+        } else {
+            await liftService.createRequest(realId, dateStr);
+        }
+    } catch (err) {
+        console.error('Failed to toggle lift request', err);
+        alert('Failed to update request. Please try again.');
+        // Revert
+        setEventStatus(prev => ({ ...prev, [virtualId]: currentStatus }));
+    } finally {
+        setProcessingEvents(prev => ({ ...prev, [virtualId]: false }));
+    }
+  };
 
-      if (typeof valA === 'string' && typeof valB === 'string') {
-        return sortConfig.direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
-      }
+  const createOffer = async (realId: number, dateStr: string, virtualId: string, car: Car) => {
+    if (processingEvents[virtualId]) return;
+    setProcessingEvents(prev => ({ ...prev, [virtualId]: true }));
 
-      if (typeof valA === 'number' && typeof valB === 'number') {
-        return sortConfig.direction === 'asc' ? valA - valB : valB - valA;
-      }
+    // Optimistic
+    setEventStatus(prev => ({ ...prev, [virtualId]: 'offered' }));
+    setCarDialogOpen(false);
+    setSelectedEventForOffer(null);
 
-      return 0;
-    });
-  }, [events, sortConfig]);
+    try {
+        await liftService.createOffer(realId, dateStr, car.id);
+    } catch (err) {
+        console.error(err);
+        alert('Failed to create offer');
+        setEventStatus(prev => ({ ...prev, [virtualId]: null }));
+    } finally {
+        setProcessingEvents(prev => ({ ...prev, [virtualId]: false }));
+    }
+  };
+
+  const handleOfferLiftClick = (event: Event) => {
+    const virtualId = String(event.id);
+    const realId = event.realId || Number(event.id);
+    const dateStr = new Date(event.date).toISOString().split('T')[0];
+    const currentStatus = eventStatus[virtualId];
+    
+    if (currentStatus === 'offered') {
+        if (confirm('Do you want to cancel your lift offer?')) {
+             if (processingEvents[virtualId]) return;
+             setProcessingEvents(prev => ({ ...prev, [virtualId]: true }));
+             
+             // Optimistic
+             setEventStatus(prev => ({ ...prev, [virtualId]: null }));
+
+             liftService.deleteOffer(realId, dateStr)
+                .catch(err => {
+                    console.error(err);
+                    alert('Failed to cancel offer');
+                    setEventStatus(prev => ({ ...prev, [virtualId]: 'offered' }));
+                })
+                .finally(() => {
+                    setProcessingEvents(prev => ({ ...prev, [virtualId]: false }));
+                });
+        }
+        return;
+    }
+
+    if (cars.length === 0) return; 
+
+    if (cars.length === 1) {
+        createOffer(realId, dateStr, virtualId, cars[0]);
+    } else {
+        setSelectedEventForOffer({ id: realId, date: dateStr });
+        setCarDialogOpen(true);
+    }
+  };
 
   const handleCreateEvent = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -157,7 +304,6 @@ export default function EventListPage() {
 
     setIsSubmitting(true);
     try {
-      // Combine date and time for backend
       const submitData = {
         ...formData,
         groupId: Number(formData.groupId),
@@ -251,15 +397,41 @@ export default function EventListPage() {
             return <Typography variant="body2">{event.address?.city || event.address?.street || '-'}</Typography>;
           }
           if (column.id === 'actions') {
+            const virtualId = String(event.id);
+            const status = eventStatus[virtualId];
+            const isOffered = status === 'offered';
+            const isRequested = status === 'requested';
+            const isProcessing = processingEvents[virtualId];
+
             return (
-              <Button
-                size="small"
-                variant="outlined"
-                startIcon={<InfoIcon />}
-                onClick={() => router.push(`/event-details?id=${event.realId || event.id}&date=${new Date(event.date).toISOString().split('T')[0]}`)}
-              >
-                Details
-              </Button>
+              <Stack direction="row" spacing={1} alignItems="center" justifyContent="flex-end">
+                 <ButtonGroup size="small" variant="outlined" aria-label="event actions">
+                    <Button 
+                        color={isOffered ? "success" : "primary"}
+                        variant={isOffered ? "contained" : "outlined"}
+                        disabled={(!user?.isDriver && !isOffered) || isRequested || isProcessing}
+                        onClick={() => handleOfferLiftClick(event)}
+                    >
+                        Offer Lift
+                    </Button>
+                    <Button 
+                        color={isRequested ? "secondary" : "primary"}
+                        variant={isRequested ? "contained" : "outlined"}
+                        disabled={(isOffered && !isRequested) || isProcessing}
+                        onClick={() => handleRequestLift(event)}
+                    >
+                        Request Lift
+                    </Button>
+                 </ButtonGroup>
+                <Button
+                  size="small"
+                  variant="text"
+                  startIcon={<InfoIcon />}
+                  onClick={() => router.push(`/event-details?id=${event.realId || event.id}&date=${new Date(event.date).toISOString().split('T')[0]}`)}
+                >
+                  Details
+                </Button>
+              </Stack>
             );
           }
           return null;
@@ -377,6 +549,20 @@ export default function EventListPage() {
           />
         </Stack>
       </CustomDialog>
+
+      {/* Car Selection Dialog */}
+      <CarSelectionDialog
+        open={carDialogOpen}
+        onClose={() => { setCarDialogOpen(false); setSelectedEventForOffer(null); }}
+        cars={cars}
+        onSelect={(car) => {
+            if (selectedEventForOffer) {
+                // Reconstruct virtual ID for UI update
+                const virtualId = `${selectedEventForOffer.id}_${selectedEventForOffer.date}`; 
+                createOffer(selectedEventForOffer.id, selectedEventForOffer.date, virtualId, car);
+            }
+        }}
+      />
     </PageContainer>
   );
 }

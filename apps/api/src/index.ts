@@ -5,6 +5,9 @@ import userRoutes from './routes/userRoutes';
 import authRoutes from './routes/authRoutes';
 import eventRoutes from './routes/eventRoutes'; 
 import groupRoutes from './routes/groupRoutes';
+import carRoutes from './routes/carRoutes';
+import liftRequestRoutes from './routes/liftRequestRoutes';
+import liftOfferRoutes from './routes/liftOfferRoutes';
 
 const app = express();
 // PORT is automatically set by Render to 10000 or from environment variable
@@ -25,6 +28,9 @@ app.use('/users', userRoutes);
 app.use('/auth', authRoutes);
 app.use('/events', eventRoutes); 
 app.use('/groups', groupRoutes);
+app.use('/cars', carRoutes);
+app.use('/lift-requests', liftRequestRoutes);
+app.use('/lift-offers', liftOfferRoutes);
 
 app.get('/', (req, res) => {
   res.send('API is running');

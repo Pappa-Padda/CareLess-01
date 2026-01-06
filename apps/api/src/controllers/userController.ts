@@ -71,7 +71,7 @@ export const getAddresses = async (req: Request, res: Response) => {
 export const addAddress = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.userId;
-    const { street, city, province, postalCode, country } = req.body;
+    const { street, city, province, postalCode, country, link } = req.body;
 
     // Create the address
     const newAddress = await prisma.address.create({
@@ -81,6 +81,7 @@ export const addAddress = async (req: Request, res: Response) => {
         province,
         postalCode,
         country,
+        link,
       },
     });
 
@@ -97,6 +98,45 @@ export const addAddress = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error adding address:', error);
     res.status(500).json({ error: 'Error adding address' });
+  }
+};
+
+export const updateAddress = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.userId;
+    const { id } = req.params;
+    const { street, city, province, postalCode, country, link } = req.body;
+
+    // Verify ownership via AddressList
+    const addressListEntry = await prisma.addressList.findUnique({
+      where: {
+        addressId_userId: {
+          addressId: Number(id),
+          userId,
+        },
+      },
+    });
+
+    if (!addressListEntry) {
+      return res.status(403).json({ error: 'Address not found or access denied' });
+    }
+
+    const updatedAddress = await prisma.address.update({
+      where: { id: Number(id) },
+      data: {
+        street,
+        city,
+        province,
+        postalCode,
+        country,
+        link,
+      },
+    });
+
+    res.json(updatedAddress);
+  } catch (error) {
+    console.error('Error updating address:', error);
+    res.status(500).json({ error: 'Error updating address' });
   }
 };
 

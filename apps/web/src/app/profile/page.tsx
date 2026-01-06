@@ -8,12 +8,14 @@ import IconButton from '@mui/material/IconButton';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
+import LinkIcon from '@mui/icons-material/Link';
 import Button from '@mui/material/Button';
 import Paper from '@mui/material/Paper';
 import Avatar from '@mui/material/Avatar';
 import Grid from '@mui/material/Grid';
 import Badge from '@mui/material/Badge';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
+import Tooltip from '@mui/material/Tooltip';
 
 import PageContainer from '@/components/shared/ui/PageContainer';
 import PageHeading from '@/components/shared/ui/PageHeading';
@@ -42,7 +44,8 @@ const addressColumns: Column<Address>[] = [
   { id: 'province', label: 'Province', sortable: true },
   { id: 'postalCode', label: 'Postal Code', sortable: true },
   { id: 'country', label: 'Country', sortable: true },
-  { id: 'actions', label: 'Actions', align: 'center', width: 100 },
+  { id: 'link', label: 'Link', width: 80, align: 'center' },
+  { id: 'actions', label: 'Actions', align: 'center', width: 120 },
 ];
 
 export default function ProfilePage() {
@@ -68,6 +71,7 @@ export default function ProfilePage() {
   
   // Address Dialog State
   const [isAddressDialogOpen, setIsAddressDialogOpen] = useState(false);
+  const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
   const [addressFormData, setAddressFormData] = useState<AddressFormData>({
     street: '',
     city: '',
@@ -94,7 +98,7 @@ export default function ProfilePage() {
   };
 
   const sortedAddresses = React.useMemo(() => {
-    if (sortConfig.key === 'actions') return addresses;
+    if (sortConfig.key === 'actions' || sortConfig.key === 'link') return addresses;
     
     return [...addresses].sort((a, b) => {
       const valA = a[sortConfig.key as keyof Address];
@@ -168,12 +172,18 @@ export default function ProfilePage() {
     }
   };
 
-  const handleAddAddress = async (e: React.FormEvent) => {
+  const handleAddressSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsAddressSubmitting(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/addresses`, {
-        method: 'POST',
+      const url = selectedAddress 
+        ? `${process.env.NEXT_PUBLIC_API_URL}/users/addresses/${selectedAddress.id}`
+        : `${process.env.NEXT_PUBLIC_API_URL}/users/addresses`;
+      
+      const method = selectedAddress ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(addressFormData),
         credentials: 'include',
@@ -181,14 +191,31 @@ export default function ProfilePage() {
 
       if (res.ok) {
         setIsAddressDialogOpen(false);
-        setAddressFormData({ street: '', city: '', province: '', postalCode: '', country: '' });
         fetchAddresses();
       }
     } catch (error) {
-      console.error('Failed to add address', error);
+      console.error('Failed to save address', error);
     } finally {
       setIsAddressSubmitting(false);
     }
+  };
+
+  const openAddressDialog = (address?: Address) => {
+    if (address) {
+      setSelectedAddress(address);
+      setAddressFormData({
+        street: address.street,
+        city: address.city,
+        province: address.province,
+        postalCode: address.postalCode,
+        country: address.country,
+        link: address.link || '',
+      });
+    } else {
+      setSelectedAddress(null);
+      setAddressFormData({ street: '', city: '', province: '', postalCode: '', country: '', link: '' });
+    }
+    setIsAddressDialogOpen(true);
   };
 
   const handleDeleteAddress = async (id: number) => {
@@ -277,7 +304,7 @@ export default function ProfilePage() {
             <Button
               variant="contained"
               startIcon={<AddIcon />}
-              onClick={() => setIsAddressDialogOpen(true)}
+              onClick={() => openAddressDialog()}
               size="small"
             >
               Add Address
@@ -292,15 +319,40 @@ export default function ProfilePage() {
             sortConfig={sortConfig}
             onSort={handleSort}
             renderCell={(item, column) => {
+              if (column.id === 'link') {
+                return item.link ? (
+                  <Tooltip title={item.link}>
+                    <IconButton
+                      component="a"
+                      href={item.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      color="primary"
+                      size="small"
+                    >
+                      <LinkIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                ) : '-';
+              }
               if (column.id === 'actions') {
                 return (
-                  <IconButton
-                    color="error"
-                    size="small"
-                    onClick={() => handleDeleteAddress(item.id)}
-                  >
-                    <DeleteIcon fontSize="small" />
-                  </IconButton>
+                  <Stack direction="row" spacing={1} justifyContent="center">
+                    <IconButton
+                      color="primary"
+                      size="small"
+                      onClick={() => openAddressDialog(item)}
+                    >
+                      <EditIcon fontSize="small" />
+                    </IconButton>
+                    <IconButton
+                      color="error"
+                      size="small"
+                      onClick={() => handleDeleteAddress(item.id)}
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Stack>
                 );
               }
               return item[column.id as keyof Address];
@@ -381,17 +433,19 @@ export default function ProfilePage() {
         />
       </CustomDialog>
 
-      {/* Add Address Dialog */}
+      {/* Add/Edit Address Dialog */}
       <CustomDialog
         open={isAddressDialogOpen}
         onClose={() => setIsAddressDialogOpen(false)}
-        title="Add New Address"
+        title={selectedAddress ? "Edit Address" : "Add New Address"}
         component="form"
-        onSubmit={handleAddAddress}
+        onSubmit={handleAddressSubmit}
         actions={
           <>
             <CancelButton onClick={() => setIsAddressDialogOpen(false)}>Cancel</CancelButton>
-            <SubmitButton isSubmitting={isAddressSubmitting}>Save Address</SubmitButton>
+            <SubmitButton isSubmitting={isAddressSubmitting}>
+              {selectedAddress ? "Update Address" : "Save Address"}
+            </SubmitButton>
           </>
         }
       >
