@@ -11,6 +11,8 @@ import Stack from '@mui/material/Stack';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Checkbox from '@mui/material/Checkbox';
 import ButtonGroup from '@mui/material/ButtonGroup';
+import Paper from '@mui/material/Paper';
+import Avatar from '@mui/material/Avatar';
 import { useRouter } from 'next/navigation';
 
 import PageContainer from '@/components/shared/ui/PageContainer';
@@ -31,6 +33,7 @@ import { liftService } from '@/features/lifts/liftService';
 import { Event } from '@/features/events/types';
 import { Car } from '@/features/cars/types';
 import { useAuth } from '@/context/AuthContext';
+import { formatTime } from '@/utils/time';
 
 interface Group {
   id: number;
@@ -41,7 +44,6 @@ const columns: Column<Event>[] = [
   { id: 'date', label: 'Date', sortable: true, width: 120 },
   { id: 'startTime', label: 'Time', width: 150 },
   { id: 'name', label: 'Event Name', sortable: true },
-  { id: 'groupId', label: 'Group', sortable: true },
   { id: 'address', label: 'Location' },
   { id: 'actions', label: 'Actions', align: 'right', width: 320 },
 ];
@@ -92,8 +94,8 @@ export default function EventListPage() {
     direction: 'asc',
   });
 
-  const sortedEvents = useMemo(() => {
-    return [...events].sort((a, b) => {
+  const sortedAndGroupedEvents = useMemo(() => {
+    const sorted = [...events].sort((a, b) => {
       if (sortConfig.key === 'groupId') {
         const valA = a.group?.name || '';
         const valB = b.group?.name || '';
@@ -117,6 +119,19 @@ export default function EventListPage() {
 
       return 0;
     });
+
+    // Group by groupId
+    return sorted.reduce((acc, event) => {
+      const groupId = event.groupId;
+      if (!acc[groupId]) {
+        acc[groupId] = {
+          groupName: event.group?.name || 'Unassigned',
+          events: [],
+        };
+      }
+      acc[groupId].events.push(event);
+      return acc;
+    }, {} as Record<string, { groupName: string; events: Event[] }>);
   }, [events, sortConfig]);
 
   const fetchEvents = useCallback(async () => {
@@ -291,7 +306,6 @@ export default function EventListPage() {
     e.preventDefault();
     setError(null);
 
-    // Validation
     if (!formData.name || !formData.date || !formData.startTime || !formData.endTime || !formData.groupId) {
       setError('Please fill in all required event details');
       return;
@@ -333,10 +347,6 @@ export default function EventListPage() {
     }
   };
 
-  const formatTime = (dateStr: string) => {
-    return new Date(dateStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
-
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString([], { 
       weekday: 'short', 
@@ -360,83 +370,95 @@ export default function EventListPage() {
 
       <ErrorMessage message={pageError} />
 
-      <CustomTable
-        columns={columns}
-        data={sortedEvents}
-        isLoading={isLoading}
-        sortConfig={sortConfig}
-        onSort={handleSort}
-        emptyMessage="No upcoming events found for your groups."
-        renderCell={(event, column) => {
-          if (column.id === 'date') {
-            return <Typography variant="body2">{formatDate(event.date)}</Typography>;
-          }
-          if (column.id === 'startTime') {
-            return (
-              <Typography variant="body2">
-                {formatTime(event.startTime)} - {formatTime(event.endTime)}
-              </Typography>
-            );
-          }
-          if (column.id === 'name') {
-            return (
-              <Box>
-                <Typography variant="body2" fontWeight="bold">{event.name}</Typography>
-                {event.description && (
-                  <Typography variant="caption" color="text.secondary" noWrap sx={{ display: 'block', maxWidth: 200 }}>
-                    {event.description}
-                  </Typography>
-                )}
+      {isLoading ? <InfoMessage message="Loading events..." /> : (
+        <Stack spacing={4}>
+          {Object.entries(sortedAndGroupedEvents).map(([groupId, groupData]) => (
+            <Paper key={groupId} variant="outlined">
+              <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
+                <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.light' }}>{groupData.groupName.charAt(0)}</Avatar>
+                <Typography variant="h6">{groupData.groupName}</Typography>
               </Box>
-            );
-          }
-          if (column.id === 'groupId') {
-            return <Typography variant="body2">{event.group?.name || '-'}</Typography>;
-          }
-          if (column.id === 'address') {
-            return <Typography variant="body2">{event.address?.city || event.address?.street || '-'}</Typography>;
-          }
-          if (column.id === 'actions') {
-            const virtualId = String(event.id);
-            const status = eventStatus[virtualId];
-            const isOffered = status === 'offered';
-            const isRequested = status === 'requested';
-            const isProcessing = processingEvents[virtualId];
+              <CustomTable
+                columns={columns}
+                data={groupData.events}
+                isLoading={false} // Parent handles loading
+                sortConfig={sortConfig}
+                onSort={handleSort}
+                emptyMessage="No upcoming events for this group."
+                renderCell={(event, column) => {
+                  if (column.id === 'date') {
+                    return <Typography variant="body2">{formatDate(event.date)}</Typography>;
+                  }
+                  if (column.id === 'startTime') {
+                    return (
+                      <Typography variant="body2">
+                        {formatTime(event.startTime)} - {formatTime(event.endTime)}
+                      </Typography>
+                    );
+                  }
+                  if (column.id === 'name') {
+                    return (
+                      <Box>
+                        <Typography variant="body2" fontWeight="bold">{event.name}</Typography>
+                        {event.description && (
+                          <Typography variant="caption" color="text.secondary" noWrap sx={{ display: 'block', maxWidth: 200 }}>
+                            {event.description}
+                          </Typography>
+                        )}
+                      </Box>
+                    );
+                  }
+                  if (column.id === 'address') {
+                    return <Typography variant="body2">{event.address?.city || event.address?.street || '-'}</Typography>;
+                  }
+                  if (column.id === 'actions') {
+                    const virtualId = String(event.id);
+                    const status = eventStatus[virtualId];
+                    const isOffered = status === 'offered';
+                    const isRequested = status === 'requested';
+                    const isProcessing = processingEvents[virtualId];
 
-            return (
-              <Stack direction="row" spacing={1} alignItems="center" justifyContent="flex-end">
-                 <ButtonGroup size="small" variant="outlined" aria-label="event actions">
-                    <Button 
-                        color={isOffered ? "success" : "primary"}
-                        variant={isOffered ? "contained" : "outlined"}
-                        disabled={(!user?.isDriver && !isOffered) || isRequested || isProcessing}
-                        onClick={() => handleOfferLiftClick(event)}
-                    >
-                        Offer Lift
-                    </Button>
-                    <Button 
-                        color={isRequested ? "secondary" : "primary"}
-                        variant={isRequested ? "contained" : "outlined"}
-                        disabled={(isOffered && !isRequested) || isProcessing}
-                        onClick={() => handleRequestLift(event)}
-                    >
-                        Request Lift
-                    </Button>
-                 </ButtonGroup>
-                <Button
-                  size="small"
-                  variant="text"
-                  startIcon={<InfoIcon />}
-                  onClick={() => router.push(`/event-details?id=${event.realId || event.id}&date=${new Date(event.date).toISOString().split('T')[0]}`)}
-                >
-                  Details
-                </Button>
-              </Stack>
-            );
-          }
-          return null;
-        }}
-      />
+                    return (
+                      <Stack direction="row" spacing={1} alignItems="center" justifyContent="flex-end">
+                         <ButtonGroup size="small" variant="outlined" aria-label="event actions">
+                            <Button 
+                                color={isOffered ? "success" : "primary"}
+                                variant={isOffered ? "contained" : "outlined"}
+                                disabled={(!user?.isDriver && !isOffered) || isRequested || isProcessing}
+                                onClick={() => handleOfferLiftClick(event)}
+                            >
+                                Offer Lift
+                            </Button>
+                            <Button 
+                                color={isRequested ? "secondary" : "primary"}
+                                variant={isRequested ? "contained" : "outlined"}
+                                disabled={(isOffered && !isRequested) || isProcessing}
+                                onClick={() => handleRequestLift(event)}
+                            >
+                                Request Lift
+                            </Button>
+                         </ButtonGroup>
+                        <Button
+                          size="small"
+                          variant="text"
+                          startIcon={<InfoIcon />}
+                          onClick={() => router.push(`/event-details?id=${event.realId || event.id}&date=${new Date(event.date).toISOString().split('T')[0]}`)}
+                        >
+                          Details
+                        </Button>
+                      </Stack>
+                    );
+                  }
+                  return null;
+                }}
+              />
+            </Paper>
+          ))}
+          {Object.keys(sortedAndGroupedEvents).length === 0 && !isLoading && (
+            <InfoMessage message="No upcoming events found for your groups." />
+          )}
+        </Stack>
+      )}
 
       {/* Create Event Dialog */}
       <CustomDialog

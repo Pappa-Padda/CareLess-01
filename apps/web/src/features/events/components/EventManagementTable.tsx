@@ -67,7 +67,7 @@ export default function EventManagementTable({ events, onEdit, onDelete }: Event
                 <IconButton onClick={() => onEdit(event)} color="primary" size="small">
                   <Edit />
                 </IconButton>
-                <IconButton onClick={() => onDelete(event.id)} color="error" size="small">
+                <IconButton onClick={() => onDelete(Number(event.id))} color="error" size="small">
                   <Delete />
                 </IconButton>
               </TableCell>

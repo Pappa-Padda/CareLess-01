@@ -48,7 +48,6 @@ const menuItems: MenuItem[] = [
   { kind: 'header', title: 'Passenger Core' },
   { kind: 'item', text: 'Event List', icon: <FormatListBulletedIcon />, href: '/event-list' },
   { kind: 'item', text: 'My Lifts', icon: <EmojiTransportationIcon />, href: '/my-lifts' },
-  { kind: 'item', text: 'Lift Confirmation', icon: <CheckCircleIcon />, href: '/confirmation' },
 
   { kind: 'header', title: 'Driver Core' },
   { kind: 'item', text: 'Car Management', icon: <DirectionsCarIcon />, href: '/cars' },

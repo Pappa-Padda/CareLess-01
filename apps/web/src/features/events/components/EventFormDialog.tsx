@@ -71,7 +71,10 @@ export default function EventFormDialog({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({
+        ...prev,
+        [name]: name === 'groupId' ? Number(value) : value
+    }));
   };
 
   const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -105,12 +108,13 @@ export default function EventFormDialog({
     
     const submitData: CreateEventDTO = {
         ...formData,
+        groupId: Number(formData.groupId),
         startTime: `${formData.date}T${formData.startTime}`,
         endTime: `${formData.date}T${formData.endTime}`,
     };
 
     if (initialData) {
-        await onSubmit({ ...submitData, id: initialData.id });
+        await onSubmit({ ...submitData, id: Number(initialData.id) });
     } else {
         await onSubmit(submitData);
     }

@@ -191,6 +191,7 @@ model PassengerAllocation {
   passengerId     Int     @map("Passenger_ID")
   pickupId        Int     @map("Pickup_ID")
   isReturning     Boolean @default(false) @map("Is_Returning")
+  isConfirmed     Boolean @default(false) @map("Is_Confirmed")
 
   // Relations
   liftOffer LiftOffer     @relation(fields: [liftOfferId], references: [id], onDelete: Cascade)
