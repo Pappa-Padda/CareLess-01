@@ -32,6 +32,7 @@ import Tooltip from '@mui/material/Tooltip';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { allocationService } from '@/features/allocation/allocationService';
 import ColorModeIconDropdown from '../../shared-theme/ColorModeIconDropdown';
 
 const drawerWidth = 240;
@@ -40,20 +41,26 @@ type MenuItem =
   | { kind: 'header'; title: string }
   | { kind: 'item'; text: string; icon: React.ReactNode; href: string };
 
-const menuItems: MenuItem[] = [
+const generalItems: MenuItem[] = [
   { kind: 'header', title: 'General Setup' },
   { kind: 'item', text: 'Profile Setup', icon: <PersonIcon />, href: '/profile' },
   { kind: 'item', text: 'Groups', icon: <GroupIcon />, href: '/groups' },
+];
 
+const passengerItems: MenuItem[] = [
   { kind: 'header', title: 'Passenger Core' },
   { kind: 'item', text: 'Event List', icon: <FormatListBulletedIcon />, href: '/event-list' },
   { kind: 'item', text: 'My Lifts', icon: <EmojiTransportationIcon />, href: '/my-lifts' },
+];
 
+const driverItems: MenuItem[] = [
   { kind: 'header', title: 'Driver Core' },
   { kind: 'item', text: 'Car Management', icon: <DirectionsCarIcon />, href: '/cars' },
   { kind: 'item', text: 'My Lift Offers', icon: <LocalTaxiIcon />, href: '/lift-offers' },
   { kind: 'item', text: 'Route View', icon: <MapIcon />, href: '/route' },
+];
 
+const adminItems: MenuItem[] = [
   { kind: 'header', title: 'Admin Management' },
   { kind: 'item', text: 'Admin Dashboard', icon: <DashboardIcon />, href: '/admin-dashboard' },
   { kind: 'item', text: 'Event Management', icon: <EventIcon />, href: '/admin/events' },
@@ -66,6 +73,28 @@ export default function CarelessSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuth();
+  const [isAdmin, setIsAdmin] = React.useState(false);
+
+  React.useEffect(() => {
+    const checkAdmin = async () => {
+      if (user) {
+        try {
+          const data = await allocationService.getAdminGroups();
+          setIsAdmin(data.groups && data.groups.length > 0);
+        } catch (err) {
+          console.error('Failed to check admin status', err);
+        }
+      }
+    };
+    checkAdmin();
+  }, [user]);
+
+  const menuItems = [
+    ...generalItems,
+    ...passengerItems,
+    ...driverItems,
+    ...(isAdmin ? adminItems : []),
+  ];
 
   return (
     <Drawer
