@@ -21,6 +21,8 @@ import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
 import Alert from '@mui/material/Alert';
 
+import { APIProvider, useMapsLibrary } from '@vis.gl/react-google-maps';
+
 import PageContainer from '@/components/shared/ui/PageContainer';
 import PageHeading from '@/components/shared/ui/PageHeading';
 import CustomTextField from '@/components/shared/ui/CustomTextField';
@@ -54,8 +56,9 @@ const addressColumns: Column<Address>[] = [
   { id: 'actions', label: 'Actions', align: 'center', width: 150 },
 ];
 
-export default function ProfilePage() {
+function ProfileContent() {
   const { user, refreshUser } = useAuth();
+  const geocodingLib = useMapsLibrary('geocoding');
   
   // User Profile State
   const [profileData, setProfileData] = useState({
@@ -186,6 +189,27 @@ export default function ProfilePage() {
     e.preventDefault();
     setIsAddressSubmitting(true);
     try {
+      // Geocoding
+      let latitude: number | undefined;
+      let longitude: number | undefined;
+
+      if (geocodingLib) {
+          try {
+              const geocoder = new geocodingLib.Geocoder();
+              const addressString = `${addressFormData.street}, ${addressFormData.city}, ${addressFormData.province}, ${addressFormData.postalCode}, ${addressFormData.country}`;
+              const geoRes = await geocoder.geocode({ address: addressString });
+              
+              if (geoRes.results && geoRes.results.length > 0) {
+                  const location = geoRes.results[0].geometry.location;
+                  latitude = location.lat();
+                  longitude = location.lng();
+              }
+          } catch (geoError) {
+              console.warn("Geocoding failed:", geoError);
+              // Proceed without coordinates
+          }
+      }
+
       const url = selectedAddress 
         ? `${process.env.NEXT_PUBLIC_API_URL}/users/addresses/${selectedAddress.id}`
         : `${process.env.NEXT_PUBLIC_API_URL}/users/addresses`;
@@ -195,7 +219,7 @@ export default function ProfilePage() {
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(addressFormData),
+        body: JSON.stringify({ ...addressFormData, latitude, longitude }),
         credentials: 'include',
       });
 
@@ -543,5 +567,13 @@ export default function ProfilePage() {
         </Stack>
       </CustomDialog>
     </PageContainer>
+  );
+}
+
+export default function ProfilePage() {
+  return (
+    <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''}>
+      <ProfileContent />
+    </APIProvider>
   );
 }

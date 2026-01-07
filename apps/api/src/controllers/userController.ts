@@ -139,7 +139,14 @@ export const setDefaultAddress = async (req: Request, res: Response) => {
 export const addAddress = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.userId;
-    const { street, city, province, postalCode, country, link } = req.body;
+    const { street, city, province, postalCode, country, link, latitude, longitude } = req.body;
+
+    // Check if user has any addresses
+    const existingAddressesCount = await prisma.addressList.count({
+      where: { userId },
+    });
+
+    const isDefault = existingAddressesCount === 0;
 
     // Create the address
     const newAddress = await prisma.address.create({
@@ -150,6 +157,8 @@ export const addAddress = async (req: Request, res: Response) => {
         postalCode,
         country,
         link,
+        latitude,
+        longitude,
       },
     });
 
@@ -159,6 +168,7 @@ export const addAddress = async (req: Request, res: Response) => {
         userId,
         addressId: newAddress.id,
         rank: 1, // Default rank, logic to adjust can be added later
+        isDefault,
       },
     });
 
@@ -219,6 +229,23 @@ export const deleteAddress = async (req: Request, res: Response) => {
         addressId: parseInt(id),
       },
     });
+
+    // Check remaining addresses
+    const remainingAddresses = await prisma.addressList.findMany({
+        where: { userId },
+    });
+
+    if (remainingAddresses.length === 1) {
+        await prisma.addressList.update({
+            where: {
+                addressId_userId: {
+                    addressId: remainingAddresses[0].addressId,
+                    userId
+                }
+            },
+            data: { isDefault: true }
+        });
+    }
 
     res.json({ message: 'Address removed' });
   } catch (error) {
