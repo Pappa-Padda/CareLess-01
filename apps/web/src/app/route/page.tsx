@@ -12,7 +12,7 @@ import Step from '@mui/material/Step';
 import StepLabel from '@mui/material/StepLabel';
 import StepContent from '@mui/material/StepContent';
 import CircularProgress from '@mui/material/CircularProgress';
-import { APIProvider, Map } from '@vis.gl/react-google-maps';
+import { APIProvider, Map, useMapsLibrary } from '@vis.gl/react-google-maps';
 import { useSearchParams, useRouter } from 'next/navigation';
 
 import PageContainer from '@/components/shared/ui/PageContainer';
@@ -40,6 +40,7 @@ function RouteViewContent() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const geocodingLib = useMapsLibrary('geocoding');
   
   const [offers, setOffers] = useState<DriverDashboardOffer[]>([]);
   const [selectedOfferId, setSelectedOfferId] = useState<number | ''>('');
@@ -54,6 +55,20 @@ function RouteViewContent() {
   const [loading, setLoading] = useState(true);
   const [routeInfo, setRouteInfo] = useState<google.maps.DirectionsRoute | null>(null);
   const [mapError, setMapError] = useState<string | null>(null);
+
+  // Helper to save coordinates back to the database
+  const saveCoordinates = async (addressId: number, lat: number, lng: number) => {
+    try {
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/addresses/${addressId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ latitude: lat, longitude: lng }),
+            credentials: 'include',
+        });
+    } catch (err) {
+        console.error('Failed to save geocoded coordinates', err);
+    }
+  };
 
   // Fetch Data
   useEffect(() => {
@@ -86,9 +101,27 @@ function RouteViewContent() {
                         setInitialCenter(center);
                         setMapCenter(center); 
                         setMapZoom(13);
-                        setOriginLocation(center); // Use coords for route origin
+                        setOriginLocation(center);
+                    } else if (geocodingLib) {
+                        // LAZY GEOCODE: Address exists but no coords
+                        const geocoder = new geocodingLib.Geocoder();
+                        const geoRes = await geocoder.geocode({ address: addrString });
+                        if (geoRes.results && geoRes.results.length > 0) {
+                            const loc = geoRes.results[0].geometry.location;
+                            const coords = { lat: loc.lat(), lng: loc.lng() };
+                            
+                            setInitialCenter(coords);
+                            setMapCenter(coords);
+                            setMapZoom(13);
+                            setOriginLocation(coords);
+
+                            // Save for next time
+                            saveCoordinates(def.id, coords.lat, coords.lng);
+                        } else {
+                            setOriginLocation(addrString);
+                        }
                     } else {
-                        setOriginLocation(addrString); // Fallback to string
+                        setOriginLocation(addrString);
                     }
                 }
             }
@@ -109,7 +142,7 @@ function RouteViewContent() {
     };
 
     fetchData();
-  }, [user, searchParams]);
+  }, [user, searchParams, geocodingLib]);
 
   const selectedOffer = useMemo(() => 
     offers.find(o => o.id === Number(selectedOfferId)), 

@@ -421,7 +421,14 @@ export default function EventListPage() {
                     );
                   }
                   if (column.id === 'address') {
-                    return <Typography variant="body2">{event.address?.city || event.address?.street || '-'}</Typography>;
+                    const addr = event.address;
+                    if (!addr) return '-';
+                    return (
+                        <Box>
+                            <Typography variant="body2">{addr.nickname || addr.city}</Typography>
+                            {addr.nickname && <Typography variant="caption" color="text.secondary">{addr.street}</Typography>}
+                        </Box>
+                    );
                   }
                   if (column.id === 'actions') {
                     const virtualId = String(event.id);

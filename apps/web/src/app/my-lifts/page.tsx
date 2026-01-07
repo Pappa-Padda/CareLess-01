@@ -218,7 +218,7 @@ export default function MyLiftsPage() {
                   <Stack direction="row" alignItems="center" spacing={1} mt={1}>
                     <LocationOnIcon fontSize="small" color="action" />
                     <Typography variant="body2">
-                      Pickup at {item.pickup.address.street}, {item.pickup.address.city} at {formatTime(item.pickup.time)}
+                      Pickup at {item.pickup.address.nickname ? `${item.pickup.address.nickname} (${item.pickup.address.street})` : `${item.pickup.address.street}, ${item.pickup.address.city}`} at {formatTime(item.pickup.time)}
                     </Typography>
                     {item.pickup.address.link && (
                         <Tooltip title={item.pickup.address.link}>

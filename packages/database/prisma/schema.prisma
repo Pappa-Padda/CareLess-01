@@ -21,6 +21,7 @@ generator client {
 
 model Address {
   id         Int      @id @default(autoincrement()) @map("Address_ID")
+  nickname   String?  @map("Nickname")
   street     String   @map("Street")
   city       String   @map("City")
   province   String   @map("Province")

@@ -26,6 +26,7 @@ export interface EventDetails {
   endTime: string;
   isRecurring: boolean;
   address: {
+    nickname?: string;
     street: string;
     city: string;
     province: string;
@@ -58,6 +59,7 @@ export interface PickupDetails {
   id: number;
   time: string;
   address: {
+    nickname?: string;
     street: string;
     city: string;
     province: string;

@@ -61,7 +61,7 @@ export const getAddresses = async (req: Request, res: Response) => {
       orderBy: { isDefault: 'desc' }, // Show default first
     });
 
-    res.json(addresses.map((a) => ({ ...a.address, rank: a.rank, isDefault: a.isDefault })));
+    res.json(addresses.map((a) => ({ ...a.address, rank: a.rank, isDefault: a.isDefault, nickname: a.address.nickname })));
   } catch (error) {
     console.error('Error fetching addresses:', error);
     res.status(500).json({ error: 'Error fetching addresses' });
@@ -139,7 +139,7 @@ export const setDefaultAddress = async (req: Request, res: Response) => {
 export const addAddress = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.userId;
-    const { street, city, province, postalCode, country, link, latitude, longitude } = req.body;
+    const { nickname, street, city, province, postalCode, country, link, latitude, longitude } = req.body;
 
     // Check if user has any addresses
     const existingAddressesCount = await prisma.addressList.count({
@@ -151,6 +151,7 @@ export const addAddress = async (req: Request, res: Response) => {
     // Create the address
     const newAddress = await prisma.address.create({
       data: {
+        nickname,
         street,
         city,
         province,
@@ -183,7 +184,7 @@ export const updateAddress = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.userId;
     const { id } = req.params;
-    const { street, city, province, postalCode, country, link } = req.body;
+    const { nickname, street, city, province, postalCode, country, link, latitude, longitude } = req.body;
 
     // Verify ownership via AddressList
     const addressListEntry = await prisma.addressList.findUnique({
@@ -202,12 +203,15 @@ export const updateAddress = async (req: Request, res: Response) => {
     const updatedAddress = await prisma.address.update({
       where: { id: Number(id) },
       data: {
+        nickname,
         street,
         city,
         province,
         postalCode,
         country,
         link,
+        latitude,
+        longitude,
       },
     });
 

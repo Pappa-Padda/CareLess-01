@@ -35,22 +35,23 @@ import { useAuth } from '@/context/AuthContext';
 
 interface Address {
   id: number;
+  nickname?: string;
   street: string;
   city: string;
   province: string;
   postalCode: string;
   country: string;
   link?: string;
+  latitude?: number | string;
+  longitude?: number | string;
   rank?: number;
   isDefault: boolean;
 }
 
 const addressColumns: Column<Address>[] = [
+  { id: 'nickname', label: 'Nickname', sortable: true },
   { id: 'street', label: 'Street', sortable: true },
   { id: 'city', label: 'City', sortable: true },
-  { id: 'province', label: 'Province', sortable: true },
-  { id: 'postalCode', label: 'Postal Code', sortable: true },
-  { id: 'country', label: 'Country', sortable: true },
   { id: 'isDefault', label: 'Status', align: 'center', width: 100 },
   { id: 'link', label: 'Link', width: 80, align: 'center' },
   { id: 'actions', label: 'Actions', align: 'center', width: 150 },
@@ -58,7 +59,6 @@ const addressColumns: Column<Address>[] = [
 
 function ProfileContent() {
   const { user, refreshUser } = useAuth();
-  const geocodingLib = useMapsLibrary('geocoding');
   
   // User Profile State
   const [profileData, setProfileData] = useState({
@@ -82,6 +82,7 @@ function ProfileContent() {
   const [isAddressDialogOpen, setIsAddressDialogOpen] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
   const [addressFormData, setAddressFormData] = useState<AddressFormData>({
+    nickname: '',
     street: '',
     city: '',
     province: '',
@@ -187,29 +188,15 @@ function ProfileContent() {
 
   const handleAddressSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validation: Ensure coordinates are present
+    if (!addressFormData.latitude || !addressFormData.longitude) {
+      alert("Please verify your address on the map or select a suggestion from the search box before saving.");
+      return;
+    }
+
     setIsAddressSubmitting(true);
     try {
-      // Geocoding
-      let latitude: number | undefined;
-      let longitude: number | undefined;
-
-      if (geocodingLib) {
-          try {
-              const geocoder = new geocodingLib.Geocoder();
-              const addressString = `${addressFormData.street}, ${addressFormData.city}, ${addressFormData.province}, ${addressFormData.postalCode}, ${addressFormData.country}`;
-              const geoRes = await geocoder.geocode({ address: addressString });
-              
-              if (geoRes.results && geoRes.results.length > 0) {
-                  const location = geoRes.results[0].geometry.location;
-                  latitude = location.lat();
-                  longitude = location.lng();
-              }
-          } catch (geoError) {
-              console.warn("Geocoding failed:", geoError);
-              // Proceed without coordinates
-          }
-      }
-
       const url = selectedAddress 
         ? `${process.env.NEXT_PUBLIC_API_URL}/users/addresses/${selectedAddress.id}`
         : `${process.env.NEXT_PUBLIC_API_URL}/users/addresses`;
@@ -219,7 +206,7 @@ function ProfileContent() {
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...addressFormData, latitude, longitude }),
+        body: JSON.stringify(addressFormData),
         credentials: 'include',
       });
 
@@ -238,16 +225,19 @@ function ProfileContent() {
     if (address) {
       setSelectedAddress(address);
       setAddressFormData({
+        nickname: address.nickname || '',
         street: address.street,
         city: address.city,
         province: address.province,
         postalCode: address.postalCode,
         country: address.country,
         link: address.link || '',
+        latitude: address.latitude ? Number(address.latitude) : undefined,
+        longitude: address.longitude ? Number(address.longitude) : undefined,
       });
     } else {
       setSelectedAddress(null);
-      setAddressFormData({ street: '', city: '', province: '', postalCode: '', country: '', link: '' });
+      setAddressFormData({ nickname: '', street: '', city: '', province: '', postalCode: '', country: '', link: '' });
     }
     setIsAddressDialogOpen(true);
   };
@@ -378,6 +368,9 @@ function ProfileContent() {
             sortConfig={sortConfig}
             onSort={handleSort}
             renderCell={(item, column) => {
+              if (column.id === 'nickname') {
+                return item.nickname || '-';
+              }
               if (column.id === 'isDefault') {
                 return item.isDefault ? (
                   <Badge badgeContent="Default" color="primary" sx={{ '& .MuiBadge-badge': { fontSize: '0.65rem' } }}>
