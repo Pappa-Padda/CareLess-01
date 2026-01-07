@@ -46,6 +46,7 @@ export interface DriverDetails {
 }
 
 export interface CarDetails {
+  id: number;
   make: string;
   model: string;
   year: number;
@@ -209,5 +210,22 @@ export const liftService = {
       body: JSON.stringify({ liftOfferId }),
     });
     if (!res.ok) throw new Error('Failed to decline allocation');
+  },
+
+  updateLiftOfferCar: async (offerId: number, carId: number, force: boolean = false): Promise<any> => {
+    const res = await fetch(`${API_URL}/lift-offers/${offerId}/car`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ carId, force }),
+    });
+
+    if (res.status === 409) {
+        // Return the warning data
+        return res.json();
+    }
+
+    if (!res.ok) throw new Error('Failed to update car');
+    return res.json();
   },
 };

@@ -296,7 +296,11 @@ export default function EventListPage() {
 
     if (cars.length === 0) return; 
 
-    if (cars.length === 1) {
+    const defaultCar = cars.find(c => c.isDefault);
+
+    if (defaultCar) {
+        createOffer(realId, dateStr, virtualId, defaultCar);
+    } else if (cars.length === 1) {
         createOffer(realId, dateStr, virtualId, cars[0]);
     } else {
         setSelectedEventForOffer({ id: realId, date: dateStr });

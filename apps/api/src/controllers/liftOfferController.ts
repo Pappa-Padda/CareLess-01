@@ -97,14 +97,25 @@ export const createLiftOffer = async (req: Request, res: Response) => {
 
     const { eventId, date, carId, availableSeats, isReturning, notes } = req.body;
 
-    if (!eventId || !carId || !date) {
-      return res.status(400).json({ error: 'Event ID, Date, and Car ID are required' });
+    if (!eventId || !date) {
+      return res.status(400).json({ error: 'Event ID and Date are required' });
     }
     
     const eventIdNum = Number(eventId);
-    const carIdNum = Number(carId);
+    let carIdNum = Number(carId);
 
-    if (isNaN(eventIdNum) || isNaN(carIdNum)) {
+    // If no car provided, look for default
+    if (!carId || isNaN(carIdNum)) {
+        const defaultCar = await prisma.car.findFirst({
+            where: { driverId: userId, isDefault: true }
+        });
+        if (!defaultCar) {
+            return res.status(400).json({ error: 'No car selected and no default car found.' });
+        }
+        carIdNum = defaultCar.id;
+    }
+
+    if (isNaN(eventIdNum)) {
         return res.status(400).json({ error: 'Invalid ID format' });
     }
 
@@ -146,6 +157,82 @@ export const createLiftOffer = async (req: Request, res: Response) => {
   } catch (err) {
     console.error('Error creating lift offer:', err);
     return res.status(500).json({ error: 'Failed to create offer' });
+  }
+};
+
+export const updateLiftOfferCar = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.userId;
+    const offerId = Number(req.params.id);
+    const { carId, force } = req.body;
+
+    if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+    if (isNaN(offerId) || !carId) return res.status(400).json({ error: 'Invalid parameters' });
+
+    // 1. Fetch Offer & Allocations
+    const offer = await prisma.liftOffer.findUnique({
+      where: { id: offerId },
+      include: { allocations: true }
+    });
+
+    if (!offer) return res.status(404).json({ error: 'Offer not found' });
+    if (offer.driverId !== userId) return res.status(403).json({ error: 'Not authorized' });
+
+    // 2. Fetch New Car
+    const newCar = await prisma.car.findUnique({ where: { id: Number(carId) } });
+    if (!newCar || newCar.driverId !== userId) return res.status(400).json({ error: 'Invalid car' });
+
+    // 3. Check Capacity
+    // Current passengers vs New Car Capacity (minus driver)
+    const currentPassengerCount = offer.allocations.length;
+    const newAvailableSeats = newCar.seatCapacity - 1; // Driver takes 1
+
+    if (currentPassengerCount > newAvailableSeats && !force) {
+        return res.status(409).json({ 
+            error: 'New car is too small for assigned passengers',
+            code: 'CAPACITY_WARNING',
+            currentPassengers: currentPassengerCount,
+            newCapacity: newCar.seatCapacity
+        });
+    }
+
+    // 4. Update (and cleanse if forced)
+    await prisma.$transaction(async (tx) => {
+        if (currentPassengerCount > newAvailableSeats && force) {
+            // Remove all passengers
+            await tx.passengerAllocation.deleteMany({
+                where: { liftOfferId: offerId }
+            });
+            
+            // Reset requests to PENDING
+            const passengerIds = offer.allocations.map(a => a.passengerId);
+            if (passengerIds.length > 0) {
+                await tx.liftRequest.updateMany({
+                    where: { 
+                        eventId: offer.eventId, 
+                        date: offer.date,
+                        passengerId: { in: passengerIds }
+                    },
+                    data: { status: 'PENDING' }
+                });
+            }
+        }
+
+        // Update Offer
+        await tx.liftOffer.update({
+            where: { id: offerId },
+            data: {
+                carId: Number(carId),
+                availableSeats: newAvailableSeats // Reset available seats to max of new car
+            }
+        });
+    });
+
+    return res.json({ ok: true });
+
+  } catch (err) {
+    console.error('Error updating lift offer car:', err);
+    return res.status(500).json({ error: 'Failed to update car' });
   }
 };
 

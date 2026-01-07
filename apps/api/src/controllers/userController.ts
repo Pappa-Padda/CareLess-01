@@ -58,13 +58,81 @@ export const getAddresses = async (req: Request, res: Response) => {
     const addresses = await prisma.addressList.findMany({
       where: { userId },
       include: { address: true },
-      orderBy: { rank: 'asc' },
+      orderBy: { isDefault: 'desc' }, // Show default first
     });
 
-    res.json(addresses.map((a) => ({ ...a.address, rank: a.rank })));
+    res.json(addresses.map((a) => ({ ...a.address, rank: a.rank, isDefault: a.isDefault })));
   } catch (error) {
     console.error('Error fetching addresses:', error);
     res.status(500).json({ error: 'Error fetching addresses' });
+  }
+};
+
+export const setDefaultAddress = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.userId;
+    const addressId = parseInt(req.params.id);
+    const { updateFuturePickups } = req.body;
+
+    if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+    if (isNaN(addressId)) return res.status(400).json({ error: 'Invalid address ID' });
+
+    // Verify ownership
+    const addressEntry = await prisma.addressList.findUnique({
+        where: { addressId_userId: { addressId, userId } }
+    });
+
+    if (!addressEntry) return res.status(404).json({ error: 'Address not found in your list' });
+
+    // Find future allocations where pickup address is DIFFERENT
+    const now = new Date();
+    const futureAllocations = await prisma.passengerAllocation.findMany({
+        where: {
+            passengerId: userId,
+            pickup: {
+                time: { gte: now },
+                addressId: { not: addressId }
+            }
+        },
+        include: { pickup: true }
+    });
+
+    if (futureAllocations.length > 0 && updateFuturePickups === undefined) {
+        return res.status(409).json({
+            error: 'You have upcoming lifts with a different pickup address.',
+            code: 'FUTURE_PICKUPS_WARNING',
+            count: futureAllocations.length
+        });
+    }
+
+    // Transaction
+    await prisma.$transaction(async (tx) => {
+        // 1. Unset default flags
+        await tx.addressList.updateMany({
+            where: { userId },
+            data: { isDefault: false }
+        });
+
+        // 2. Set new default
+        await tx.addressList.update({
+            where: { addressId_userId: { addressId, userId } },
+            data: { isDefault: true }
+        });
+
+        // 3. Update future pickups if requested
+        if (updateFuturePickups && futureAllocations.length > 0) {
+            const pickupIds = futureAllocations.map(a => a.pickupId);
+            await tx.pickup.updateMany({
+                where: { id: { in: pickupIds } },
+                data: { addressId: addressId }
+            });
+        }
+    });
+
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('Error setting default address:', err);
+    return res.status(500).json({ error: 'Failed to set default address' });
   }
 };
 

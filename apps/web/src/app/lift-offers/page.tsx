@@ -21,6 +21,7 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import PhoneIcon from '@mui/icons-material/Phone';
 import MapIcon from '@mui/icons-material/Map';
+import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import InfoIcon from '@mui/icons-material/Info';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -32,6 +33,7 @@ import ErrorMessage from '@/components/shared/ui/ErrorMessage';
 import InfoMessage from '@/components/shared/ui/InfoMessage';
 import { useAuth } from '@/context/AuthContext';
 import { liftService, DriverDashboardOffer } from '@/features/lifts/liftService';
+import ChangeCarDialog from '@/features/lifts/components/ChangeCarDialog';
 import { formatTime } from '@/utils/time';
 import { getImageUrl } from '@/utils/images';
 
@@ -41,6 +43,10 @@ export default function MyLiftOffersPage() {
   const [offers, setOffers] = useState<DriverDashboardOffer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Edit Car State
+  const [editCarOpen, setEditCarOpen] = useState(false);
+  const [selectedOfferForEdit, setSelectedOfferForEdit] = useState<DriverDashboardOffer | null>(null);
 
   const fetchDashboard = useCallback(async () => {
     if (!user) {
@@ -75,6 +81,21 @@ export default function MyLiftOffersPage() {
       console.error('Failed to delete offer:', err);
       setError('Failed to cancel offer. Please try again.');
     }
+  };
+
+  const handleUpdateCar = async (carId: number, force?: boolean) => {
+    if (!selectedOfferForEdit) return;
+
+    // This returns either success or the warning object
+    const result = await liftService.updateLiftOfferCar(selectedOfferForEdit.id, carId, force);
+    
+    // If successful (no code), reload dashboard
+    if (!result.code) {
+        fetchDashboard();
+        setEditCarOpen(false); // Close dialog if success
+    }
+    
+    return result; // Pass result back to dialog for handling warnings
   };
 
   const formatDate = (dateStr: string) => {
@@ -181,7 +202,7 @@ export default function MyLiftOffersPage() {
                     <Stack spacing={2} sx={{ mt: 1 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <DirectionsCarIcon color="action" fontSize="small" />
-                            <Box>
+                            <Box sx={{ flexGrow: 1 }}>
                                 <Typography variant="body2" fontWeight="bold">
                                     {offer.car.make} {offer.car.model}
                                 </Typography>
@@ -189,6 +210,17 @@ export default function MyLiftOffersPage() {
                                     {offer.car.licensePlate}
                                 </Typography>
                             </Box>
+                            <Tooltip title="Change Car">
+                                <IconButton 
+                                    size="small" 
+                                    onClick={() => {
+                                        setSelectedOfferForEdit(offer);
+                                        setEditCarOpen(true);
+                                    }}
+                                >
+                                    <EditIcon fontSize="small" />
+                                </IconButton>
+                            </Tooltip>
                         </Box>
 
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -288,6 +320,13 @@ export default function MyLiftOffersPage() {
           ))}
         </Stack>
       )}
+
+        <ChangeCarDialog
+            open={editCarOpen}
+            onClose={() => setEditCarOpen(false)}
+            onSubmit={handleUpdateCar}
+            currentCarId={selectedOfferForEdit?.car.id as any} // Cast as any because car has id but mismatch potentially in strict type details
+        />
     </PageContainer>
   );
 }

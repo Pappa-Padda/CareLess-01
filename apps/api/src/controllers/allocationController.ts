@@ -14,6 +14,11 @@ export const getAdminGroups = async (req: Request, res: Response) => {
       include: {
         group: true,
       },
+      orderBy: {
+        group: {
+          name: 'asc',
+        },
+      },
     });
 
     return res.json({ groups: groups.map(g => g.group) });
@@ -29,7 +34,12 @@ export const getEventsForGroup = async (req: Request, res: Response) => {
     if (isNaN(groupId)) return res.status(400).json({ error: 'Invalid group ID' });
 
     const events = await prisma.event.findMany({
-      where: { groupId },
+      where: { 
+        groupId,
+        date: {
+          gte: new Date(),
+        },
+      },
       orderBy: { date: 'asc' },
     });
 
@@ -102,6 +112,11 @@ export const getAllocationData = async (req: Request, res: Response) => {
                 },
               },
             },
+            pickup: {
+              include: {
+                address: true,
+              },
+            },
           },
         },
       },
@@ -124,6 +139,8 @@ export const getAllocationData = async (req: Request, res: Response) => {
         passengers: o.allocations.map(a => ({
           id: a.passengerId,
           name: a.passenger.user.name,
+          pickupTime: a.pickup.time,
+          pickupAddress: `${a.pickup.address.street}, ${a.pickup.address.city}`,
         })),
       })),
     });
@@ -231,5 +248,61 @@ export const commitAssignments = async (req: Request, res: Response) => {
   } catch (err) {
     console.error('Commit Error:', err);
     return res.status(500).json({ error: 'Failed to commit assignments' });
+  }
+};
+
+export const clearAllocations = async (req: Request, res: Response) => {
+  try {
+    const eventId = Number(req.params.eventId);
+    const userId = (req as any).user?.userId;
+
+    if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+    if (isNaN(eventId)) return res.status(400).json({ error: 'Invalid event ID' });
+
+    // Verify admin status
+    const event = await prisma.event.findUnique({
+      where: { id: eventId },
+      include: { group: true },
+    });
+
+    if (!event) return res.status(404).json({ error: 'Event not found' });
+
+    const adminCheck = await prisma.userGroupAssociation.findUnique({
+      where: {
+        userId_groupId: {
+          userId,
+          groupId: event.groupId,
+        },
+      },
+    });
+
+    if (!adminCheck || !adminCheck.isAdmin) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    // Run transaction
+    await prisma.$transaction(async (tx) => {
+      // 1. Get all offers for this event
+      const offers = await tx.liftOffer.findMany({
+        where: { eventId, date: event.date },
+      });
+      const offerIds = offers.map(o => o.id);
+
+      // 2. Delete all allocations for these offers
+      await tx.passengerAllocation.deleteMany({
+        where: { liftOfferId: { in: offerIds } },
+      });
+
+      // 3. Reset all lift requests for this event to PENDING
+      await tx.liftRequest.updateMany({
+        where: { eventId, date: event.date },
+        data: { status: 'PENDING' },
+      });
+    });
+
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('Clear Allocations Error:', err);
+    return res.status(500).json({ error: 'Failed to clear allocations' });
   }
 };

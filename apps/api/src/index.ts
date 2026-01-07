@@ -10,6 +10,7 @@ import liftRequestRoutes from './routes/liftRequestRoutes';
 import liftOfferRoutes from './routes/liftOfferRoutes';
 import passengerRoutes from './routes/passengerRoutes';
 import allocationRoutes from './routes/allocationRoutes';
+import adminRoutes from './routes/adminRoutes';
 
 const app = express();
 // PORT is automatically set by Render to 10000 or from environment variable
@@ -35,6 +36,7 @@ app.use('/lift-requests', liftRequestRoutes);
 app.use('/lift-offers', liftOfferRoutes);
 app.use('/passenger', passengerRoutes);
 app.use('/allocation', allocationRoutes);
+app.use('/admin', adminRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server is running on ${API_URL}`);

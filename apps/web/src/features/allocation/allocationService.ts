@@ -14,7 +14,12 @@ export interface AllocationOffer {
   carInfo: string;
   totalSeats: number;
   availableSeats: number;
-  passengers: { id: number; name: string }[];
+  passengers: { 
+    id: number; 
+    name: string;
+    pickupTime?: string;
+    pickupAddress?: string;
+  }[];
 }
 
 export interface AllocationData {
@@ -52,6 +57,15 @@ export const allocationService = {
         const data = await res.json();
         throw new Error(data.error || 'Failed to commit assignments');
     }
+    return res.json();
+  },
+
+  clearAllocations: async (eventId: number) => {
+    const res = await fetch(`${API_URL}/allocation/clear/${eventId}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
+    if (!res.ok) throw new Error('Failed to clear allocations');
     return res.json();
   },
 };

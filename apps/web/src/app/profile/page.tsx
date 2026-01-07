@@ -17,6 +17,10 @@ import Badge from '@mui/material/Badge';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import Tooltip from '@mui/material/Tooltip';
 
+import StarIcon from '@mui/icons-material/Star';
+import StarBorderIcon from '@mui/icons-material/StarBorder';
+import Alert from '@mui/material/Alert';
+
 import PageContainer from '@/components/shared/ui/PageContainer';
 import PageHeading from '@/components/shared/ui/PageHeading';
 import CustomTextField from '@/components/shared/ui/CustomTextField';
@@ -36,6 +40,7 @@ interface Address {
   country: string;
   link?: string;
   rank?: number;
+  isDefault: boolean;
 }
 
 const addressColumns: Column<Address>[] = [
@@ -44,8 +49,9 @@ const addressColumns: Column<Address>[] = [
   { id: 'province', label: 'Province', sortable: true },
   { id: 'postalCode', label: 'Postal Code', sortable: true },
   { id: 'country', label: 'Country', sortable: true },
+  { id: 'isDefault', label: 'Status', align: 'center', width: 100 },
   { id: 'link', label: 'Link', width: 80, align: 'center' },
-  { id: 'actions', label: 'Actions', align: 'center', width: 120 },
+  { id: 'actions', label: 'Actions', align: 'center', width: 150 },
 ];
 
 export default function ProfilePage() {
@@ -81,6 +87,10 @@ export default function ProfilePage() {
     link: '',
   });
   const [isAddressSubmitting, setIsAddressSubmitting] = useState(false);
+
+  // Warning State
+  const [warningOpen, setWarningOpen] = useState(false);
+  const [warningData, setWarningData] = useState<{ count: number, addressId: number } | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -235,6 +245,31 @@ export default function ProfilePage() {
     }
   };
 
+  const handleSetDefaultAddress = async (id: number, updatePickups?: boolean) => {
+    try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/addresses/${id}/default`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ updateFuturePickups: updatePickups }),
+            credentials: 'include',
+        });
+
+        if (res.status === 409) {
+            const data = await res.json();
+            setWarningData({ count: data.count, addressId: id });
+            setWarningOpen(true);
+            return;
+        }
+
+        if (res.ok) {
+            setWarningOpen(false);
+            fetchAddresses();
+        }
+    } catch (error) {
+        console.error('Failed to set default address', error);
+    }
+  };
+
   const getProfileSrc = () => {
     if (previewImage) return previewImage;
     if (user?.profilePicture) {
@@ -319,6 +354,13 @@ export default function ProfilePage() {
             sortConfig={sortConfig}
             onSort={handleSort}
             renderCell={(item, column) => {
+              if (column.id === 'isDefault') {
+                return item.isDefault ? (
+                  <Badge badgeContent="Default" color="primary" sx={{ '& .MuiBadge-badge': { fontSize: '0.65rem' } }}>
+                    <Box />
+                  </Badge>
+                ) : null;
+              }
               if (column.id === 'link') {
                 return item.link ? (
                   <Tooltip title={item.link}>
@@ -338,6 +380,18 @@ export default function ProfilePage() {
               if (column.id === 'actions') {
                 return (
                   <Stack direction="row" spacing={1} justifyContent="center">
+                    <Tooltip title={item.isDefault ? "Default Address" : "Set as Default"}>
+                        <span>
+                            <IconButton
+                                color="warning"
+                                size="small"
+                                onClick={() => handleSetDefaultAddress(item.id)}
+                                disabled={item.isDefault}
+                            >
+                                {item.isDefault ? <StarIcon fontSize="small" /> : <StarBorderIcon fontSize="small" />}
+                            </IconButton>
+                        </span>
+                    </Tooltip>
                     <IconButton
                       color="primary"
                       size="small"
@@ -453,6 +507,40 @@ export default function ProfilePage() {
           data={addressFormData}
           onChange={(data) => setAddressFormData(data)}
         />
+      </CustomDialog>
+
+      {/* Future Pickup Warning Dialog */}
+      <CustomDialog
+        open={warningOpen}
+        onClose={() => setWarningOpen(false)}
+        title="Update Future Pickups?"
+        actions={
+            <>
+                <Button onClick={() => setWarningOpen(false)}>Cancel</Button>
+                <Button 
+                    onClick={() => handleSetDefaultAddress(warningData!.addressId, false)} 
+                    variant="outlined"
+                >
+                    No, keep old address
+                </Button>
+                <Button 
+                    onClick={() => handleSetDefaultAddress(warningData!.addressId, true)} 
+                    variant="contained" 
+                    color="primary"
+                >
+                    Yes, update pick-ups
+                </Button>
+            </>
+        }
+      >
+        <Stack spacing={2}>
+            <Alert severity="info">
+                You have {warningData?.count} upcoming lifts with a different pick-up address.
+            </Alert>
+            <Typography>
+                Do you want to update these lifts to use your new default address?
+            </Typography>
+        </Stack>
       </CustomDialog>
     </PageContainer>
   );

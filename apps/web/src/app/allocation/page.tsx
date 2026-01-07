@@ -25,6 +25,7 @@ import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import SaveIcon from '@mui/icons-material/Save';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import ChatIcon from '@mui/icons-material/Chat';
 
 import PageContainer from '@/components/shared/ui/PageContainer';
 import PageHeading from '@/components/shared/ui/PageHeading';
@@ -32,6 +33,7 @@ import ErrorMessage from '@/components/shared/ui/ErrorMessage';
 import InfoMessage from '@/components/shared/ui/InfoMessage';
 import CustomSelect from '@/components/shared/ui/CustomSelect';
 import { allocationService, AllocationPassenger, AllocationOffer } from '@/features/allocation/allocationService';
+import AllocationMessageDialog from '@/features/allocation/AllocationMessageDialog';
 import { getImageUrl } from '@/utils/images';
 
 export default function AllocationConsolePage() {
@@ -49,6 +51,10 @@ export default function AllocationConsolePage() {
   const [unassigned, setUnassigned] = useState<AllocationPassenger[]>([]);
   const [offers, setOffers] = useState<AllocationOffer[]>([]);
   const [hasChanges, setHasChanges] = useState(false);
+
+  // Message Dialog State
+  const [messageDialogOpen, setMessageDialogOpen] = useState(false);
+  const [selectedOfferForMessage, setSelectedOfferForMessage] = useState<AllocationOffer | null>(null);
 
   useEffect(() => {
     const fetchInitial = async () => {
@@ -71,7 +77,11 @@ export default function AllocationConsolePage() {
         try {
           const data = await allocationService.getEvents(Number(selectedGroup));
           setEvents(data.events);
-          setSelectedEvent('');
+          if (data.events.length > 0) {
+              setSelectedEvent(data.events[0].id);
+          } else {
+              setSelectedEvent('');
+          }
           setUnassigned([]);
           setOffers([]);
         } catch (err) {
@@ -116,7 +126,13 @@ export default function AllocationConsolePage() {
       if (o.id === offerId) {
         return {
           ...o,
-          passengers: [...o.passengers, { id: passenger.passengerId, name: passenger.name }]
+          passengers: [...o.passengers, { 
+              id: passenger.passengerId, 
+              name: passenger.name,
+              // Default/empty for newly assigned until saved/reloaded
+              pickupTime: undefined,
+              pickupAddress: undefined
+            }]
         };
       }
       return o;
@@ -130,10 +146,7 @@ export default function AllocationConsolePage() {
     
     if (!offer || !passenger) return;
 
-    // To properly remove, we should put them back in unassigned.
-    // For this, we'd need their full data which we get by re-fetching or better state.
-    // Since this is a console, re-fetching after remove is the safest for data integrity.
-    
+    // Remove from offer
     setOffers(prev => prev.map(o => {
       if (o.id === offerId) {
         return {
@@ -143,10 +156,20 @@ export default function AllocationConsolePage() {
       }
       return o;
     }));
+
+    // Add back to unassigned
+    // We construct the AllocationPassenger object from the removed passenger data
+    // Note: We might be missing profilePicture if it wasn't preserved, but name/id are key.
+    // Ideally we should have full objects, but for now this fixes the logic error.
+    const restoredPassenger: AllocationPassenger = {
+        id: Math.random(), // Temporary ID for list key until reload
+        passengerId: passenger.id,
+        name: passenger.name,
+        profilePicture: null // Cannot recover this without fuller state, but functional for re-assign
+    };
     
+    setUnassigned(prev => [...prev, restoredPassenger]);
     setHasChanges(true);
-    // Reload to populate unassigned list correctly
-    loadEventData(Number(selectedEvent)); 
   };
 
   const handleAutoAssign = () => {
@@ -162,13 +185,34 @@ export default function AllocationConsolePage() {
         const space = offer.totalSeats - offer.passengers.length;
         if (space > 0 && localUnassigned.length > 0) {
             const toAssign = localUnassigned.splice(0, space);
-            offer.passengers.push(...toAssign.map(p => ({ id: p.passengerId, name: p.name })));
+            offer.passengers.push(...toAssign.map(p => ({ 
+                id: p.passengerId, 
+                name: p.name,
+                pickupTime: undefined,
+                pickupAddress: undefined
+            })));
         }
     });
 
     setUnassigned(localUnassigned);
     setOffers(localOffers);
     setHasChanges(true);
+  };
+
+  const handleClearAllocations = async () => {
+    if (!confirm('Are you sure you want to clear ALL allocations for this event? This action cannot be undone.')) {
+        return;
+    }
+    setLoading(true);
+    try {
+        await allocationService.clearAllocations(Number(selectedEvent));
+        setSuccess('All allocations cleared successfully!');
+        loadEventData(Number(selectedEvent));
+    } catch (err: any) {
+        setError(err.message || 'Failed to clear allocations');
+    } finally {
+        setLoading(false);
+    }
   };
 
   const handleSave = async () => {
@@ -189,10 +233,23 @@ export default function AllocationConsolePage() {
     }
   };
 
+  // Helper to get event details
+  const currentEvent = events.find(e => e.id === selectedEvent);
+
   return (
     <PageContainer>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <PageHeading>Allocation Console</PageHeading>
+        {selectedEvent && (
+            <Button 
+                variant="outlined" 
+                color="error" 
+                startIcon={<RemoveCircleOutlineIcon />}
+                onClick={handleClearAllocations}
+            >
+                Clear All Allocations
+            </Button>
+        )}
       </Box>
 
       <Grid container spacing={3} sx={{ mb: 4 }}>
@@ -251,13 +308,13 @@ export default function AllocationConsolePage() {
                                 Unassigned ({unassigned.length})
                             </Typography>
                             <Button 
-                                variant="outlined" 
+                                variant="contained" 
                                 size="small" 
                                 startIcon={<AutoFixHighIcon />}
                                 onClick={handleAutoAssign}
                                 disabled={unassigned.length === 0}
                             >
-                                Auto
+                                Auto Allocate
                             </Button>
                         </Stack>
                         <Divider sx={{ mb: 2 }} />
@@ -312,9 +369,22 @@ export default function AllocationConsolePage() {
                                             <PersonIcon />
                                         </Avatar>
                                         <Box sx={{ flexGrow: 1 }}>
-                                            <Typography variant="subtitle1" fontWeight="bold">
-                                                {offer.driverName}
-                                            </Typography>
+                                            <Stack direction="row" alignItems="center" spacing={1}>
+                                                <Typography variant="subtitle1" fontWeight="bold">
+                                                    {offer.driverName}
+                                                </Typography>
+                                                <Tooltip title="Generate WhatsApp Message">
+                                                    <IconButton 
+                                                        size="small" 
+                                                        onClick={() => {
+                                                            setSelectedOfferForMessage(offer);
+                                                            setMessageDialogOpen(true);
+                                                        }}
+                                                    >
+                                                        <ChatIcon fontSize="small" color="primary" />
+                                                    </IconButton>
+                                                </Tooltip>
+                                            </Stack>
                                             <Typography variant="caption" color="text.secondary">
                                                 {offer.carInfo} • {offer.totalSeats} Seats
                                             </Typography>
@@ -372,6 +442,14 @@ export default function AllocationConsolePage() {
                     </Button>
                 </Box>
             )}
+
+            <AllocationMessageDialog 
+                open={messageDialogOpen}
+                onClose={() => setMessageDialogOpen(false)}
+                offer={selectedOfferForMessage}
+                eventName={currentEvent?.name || ''}
+                eventDate={currentEvent?.date || ''}
+            />
         </>
       )}
     </PageContainer>

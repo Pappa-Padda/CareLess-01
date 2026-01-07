@@ -40,4 +40,20 @@ export const carService = {
     });
     if (!res.ok) throw new Error('Failed to delete car');
   },
+
+  setDefaultCar: async (id: number, updateFutureOffers?: boolean): Promise<any> => {
+    const res = await fetch(`${API_URL}/cars/${id}/default`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ updateFutureOffers }),
+    });
+
+    if (res.status === 409) {
+        return res.json();
+    }
+
+    if (!res.ok) throw new Error('Failed to set default car');
+    return res.json();
+  },
 };

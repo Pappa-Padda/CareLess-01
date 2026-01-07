@@ -3,7 +3,8 @@ import {
   getAdminGroups, 
   getEventsForGroup, 
   getAllocationData, 
-  commitAssignments 
+  commitAssignments,
+  clearAllocations
 } from '../controllers/allocationController';
 import { requireAuth } from '../middleware/auth';
 
@@ -13,5 +14,6 @@ router.get('/groups', requireAuth, getAdminGroups);
 router.get('/events/:groupId', requireAuth, getEventsForGroup);
 router.get('/data/:eventId', requireAuth, getAllocationData);
 router.post('/commit', requireAuth, commitAssignments);
+router.delete('/clear/:eventId', requireAuth, clearAllocations);
 
 export default router;
