@@ -70,7 +70,7 @@ export default function CarsPage() {
         const result = await carService.setDefaultCar(id, updateOffers);
         
         if (result && result.code === 'FUTURE_OFFERS_WARNING') {
-            setWarningData({ count: result.count, carId: id });
+            setWarningData({ count: result.count || 0, carId: id });
             setWarningOpen(true);
             return;
         }
@@ -85,9 +85,8 @@ export default function CarsPage() {
   };
 
   const handleSubmit = async (data: CreateCarDTO | UpdateCarDTO) => {
-    const dataWithId = data as any;
-    if (dataWithId.id) {
-      await carService.updateCar(dataWithId.id, data);
+    if ('id' in data && data.id) {
+      await carService.updateCar(data.id, data);
     } else {
       await carService.createCar(data as CreateCarDTO);
     }

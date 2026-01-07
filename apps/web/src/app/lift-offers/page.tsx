@@ -10,7 +10,6 @@ import Chip from '@mui/material/Chip';
 import Avatar from '@mui/material/Avatar';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
-import Divider from '@mui/material/Divider';
 import Grid from '@mui/material/Grid';
 import { useRouter } from 'next/navigation';
 
@@ -32,7 +31,7 @@ import PageHeading from '@/components/shared/ui/PageHeading';
 import ErrorMessage from '@/components/shared/ui/ErrorMessage';
 import InfoMessage from '@/components/shared/ui/InfoMessage';
 import { useAuth } from '@/context/AuthContext';
-import { liftService, DriverDashboardOffer } from '@/features/lifts/liftService';
+import { liftService, DriverDashboardOffer, CarUpdateResult } from '@/features/lifts/liftService';
 import ChangeCarDialog from '@/features/lifts/components/ChangeCarDialog';
 import { formatTime } from '@/utils/time';
 import { getImageUrl } from '@/utils/images';
@@ -57,7 +56,7 @@ export default function MyLiftOffersPage() {
     try {
       const data = await liftService.getDriverDashboard();
       setOffers(data.offers);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to fetch driver dashboard:', err);
       setError('Failed to load your lift offers. Please try again.');
     } finally {
@@ -77,25 +76,30 @@ export default function MyLiftOffersPage() {
     try {
       await liftService.deleteOffer(offer.event.id, offer.date);
       setOffers(prev => prev.filter(o => o.id !== offer.id));
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to delete offer:', err);
       setError('Failed to cancel offer. Please try again.');
     }
   };
 
-  const handleUpdateCar = async (carId: number, force?: boolean) => {
-    if (!selectedOfferForEdit) return;
+  const handleUpdateCar = async (carId: number, force?: boolean): Promise<CarUpdateResult> => {
+    if (!selectedOfferForEdit) return {};
 
-    // This returns either success or the warning object
-    const result = await liftService.updateLiftOfferCar(selectedOfferForEdit.id, carId, force);
-    
-    // If successful (no code), reload dashboard
-    if (!result.code) {
-        fetchDashboard();
-        setEditCarOpen(false); // Close dialog if success
+    try {
+        // This returns either success or the warning object
+        const result = await liftService.updateLiftOfferCar(selectedOfferForEdit.id, carId, force);
+        
+        // If successful (no code), reload dashboard
+        if (!result.code) {
+            fetchDashboard();
+            setEditCarOpen(false); // Close dialog if success
+        }
+        
+        return result; // Pass result back to dialog for handling warnings
+    } catch (err: unknown) {
+        console.error('Failed to update car:', err);
+        throw err;
     }
-    
-    return result; // Pass result back to dialog for handling warnings
   };
 
   const formatDate = (dateStr: string) => {
@@ -325,7 +329,7 @@ export default function MyLiftOffersPage() {
             open={editCarOpen}
             onClose={() => setEditCarOpen(false)}
             onSubmit={handleUpdateCar}
-            currentCarId={selectedOfferForEdit?.car.id as any} // Cast as any because car has id but mismatch potentially in strict type details
+            currentCarId={selectedOfferForEdit?.car.id}
         />
     </PageContainer>
   );

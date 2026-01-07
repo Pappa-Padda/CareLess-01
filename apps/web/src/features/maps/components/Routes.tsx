@@ -1,17 +1,42 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useMap, useMapsLibrary } from '@vis.gl/react-google-maps';
 
 type LocationInput = string | { lat: number; lng: number };
+
+interface Leg {
+  distanceMeters?: number;
+  duration?: string;
+  startLocation?: { latLng: { latitude: number, longitude: number } };
+  endLocation?: { latLng: { latitude: number, longitude: number } };
+}
+
+interface RouteInfo {
+  distanceMeters?: number;
+  duration?: string;
+  legs?: Leg[];
+  optimizedIntermediateWaypointIndex?: number[];
+  polyline: { encodedPolyline: string };
+}
 
 interface RoutesProps {
   origin: LocationInput;
   destination: LocationInput;
   waypoints?: string[]; // Intermediates are usually addresses or place IDs, but can also be latLng. Keeping string for now for simplicity of array prop.
-  onRouteCalculated?: (route: any) => void;
-  onError?: (error: any) => void;
+  onRouteCalculated?: (route: RouteInfo) => void;
+  onError?: (error: { code?: string; message?: string }) => void;
   apiKey: string;
+}
+
+interface RoutesApiRequest {
+  origin: ReturnType<typeof formatLocation>;
+  destination: ReturnType<typeof formatLocation>;
+  travelMode: 'DRIVE';
+  routingPreference: 'TRAFFIC_AWARE';
+  computeAlternativeRoutes: boolean;
+  intermediates?: { address: string; via: boolean }[];
+  optimizeWaypointOrder?: boolean;
 }
 
 const formatLocation = (input: LocationInput) => {
@@ -28,10 +53,10 @@ const formatLocation = (input: LocationInput) => {
     };
 };
 
-export default function Routes({ 
-  origin, 
-  destination, 
-  waypoints = [], 
+export default function Routes({
+  origin,
+  destination,
+  waypoints = [],
   onRouteCalculated,
   onError,
   apiKey
@@ -39,32 +64,51 @@ export default function Routes({
   const map = useMap();
   const geometryLib = useMapsLibrary('geometry');
   const markerLib = useMapsLibrary('marker');
-  const [routePolyline, setRoutePolyline] = useState<google.maps.Polyline | null>(null);
-  const [markers, setMarkers] = useState<google.maps.marker.AdvancedMarkerElement[]>([]);
+  
+  const routePolylineRef = useRef<google.maps.Polyline | null>(null);
+  const markersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([]);
+  const fetchIdRef = useRef<number>(0);
+
+  // Helper to clear existing map artifacts
+  const clearMap = () => {
+    if (routePolylineRef.current) {
+        routePolylineRef.current.setMap(null);
+        routePolylineRef.current = null;
+    }
+    markersRef.current.forEach(m => {
+        m.map = null;
+    });
+    markersRef.current = [];
+  };
 
   // Cleanup on unmount
   useEffect(() => {
-    return () => {
-      if (routePolyline) routePolyline.setMap(null);
-      markers.forEach(m => m.map = null);
-    };
-  }, [routePolyline, markers]);
+    return () => clearMap();
+  }, []);
 
   useEffect(() => {
     if (!map || !geometryLib || !markerLib || !origin || !destination || !apiKey) return;
 
+    const currentFetchId = ++fetchIdRef.current;
+
     const fetchAndRenderRoute = async () => {
+        // 1. Clear map artifacts synchronously before starting fetch
+        clearMap();
+
         try {
             // Construct Routes API Request
-            const body = {
+            const body: RoutesApiRequest = {
                 origin: formatLocation(origin),
                 destination: formatLocation(destination),
-                intermediates: waypoints.map(wp => ({ address: wp, via: false })),
                 travelMode: 'DRIVE',
-                optimizeWaypointOrder: true,
                 routingPreference: 'TRAFFIC_AWARE',
                 computeAlternativeRoutes: false
             };
+
+            if (waypoints && waypoints.length > 0) {
+                body.intermediates = waypoints.map(wp => ({ address: wp, via: false }));
+                body.optimizeWaypointOrder = true;
+            }
 
             const response = await fetch('https://routes.googleapis.com/directions/v2:computeRoutes', {
                 method: 'POST',
@@ -78,19 +122,21 @@ export default function Routes({
 
             if (!response.ok) {
                 const errData = await response.json();
-                throw new Error(errData.error?.message || 'Routes API request failed');
+                throw new Error(errData.error?.message || `Routes API failed: ${response.status}`);
             }
 
             const data = await response.json();
             
+            // Check if this fetch is still the latest one
+            if (currentFetchId !== fetchIdRef.current) return;
+
             if (!data.routes || data.routes.length === 0) {
                 throw new Error('No routes found');
             }
 
             const route = data.routes[0];
 
-            // 1. Draw Polyline
-            if (routePolyline) routePolyline.setMap(null);
+            // 2. Draw Polyline
             const path = geometryLib.encoding.decodePath(route.polyline.encodedPolyline);
             
             const newPolyline = new google.maps.Polyline({
@@ -101,10 +147,9 @@ export default function Routes({
                 strokeWeight: 5,
                 map: map
             });
-            setRoutePolyline(newPolyline);
+            routePolylineRef.current = newPolyline;
 
-            // 2. Clear & Set Markers
-            markers.forEach(m => m.map = null);
+            // 3. Set Markers
             const newMarkers: google.maps.marker.AdvancedMarkerElement[] = [];
 
             // Start Marker
@@ -127,8 +172,8 @@ export default function Routes({
 
             // Intermediate Markers
             if (route.legs) {
-                route.legs.forEach((leg: any, index: number) => {
-                    if (index < route.legs.length - 1) { 
+                route.legs.forEach((leg: Leg, index: number) => {
+                    if (index < (route.legs?.length || 0) - 1) { 
                         const legEnd = leg.endLocation?.latLng;
                         if (legEnd) {
                              newMarkers.push(new markerLib.AdvancedMarkerElement({
@@ -140,27 +185,29 @@ export default function Routes({
                     }
                 });
             }
+            markersRef.current = newMarkers;
 
-            setMarkers(newMarkers);
-
-            // 3. Fit Bounds
+            // 4. Fit Bounds
             const bounds = new google.maps.LatLngBounds();
             path.forEach(p => bounds.extend(p));
             map.fitBounds(bounds);
 
-            // 4. Callback
+            // 5. Callback
             if (onRouteCalculated) {
                 onRouteCalculated(route);
             }
 
-        } catch (err: any) {
+        } catch (err: unknown) {
+            if (currentFetchId !== fetchIdRef.current) return;
             console.error('Routes API Error:', err);
-            if (onError) onError(err);
+            if (onError) {
+                onError({ message: err instanceof Error ? err.message : 'Unknown error' });
+            }
         }
     };
 
     fetchAndRenderRoute();
-  }, [map, geometryLib, markerLib, JSON.stringify(origin), JSON.stringify(destination), JSON.stringify(waypoints), apiKey]);
+  }, [map, geometryLib, markerLib, origin, destination, waypoints, apiKey, onRouteCalculated, onError]);
 
   return null;
 }

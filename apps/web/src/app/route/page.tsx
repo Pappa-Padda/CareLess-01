@@ -12,6 +12,7 @@ import Step from '@mui/material/Step';
 import StepLabel from '@mui/material/StepLabel';
 import StepContent from '@mui/material/StepContent';
 import CircularProgress from '@mui/material/CircularProgress';
+import { SelectChangeEvent } from '@mui/material/Select';
 import { APIProvider, Map, useMapsLibrary } from '@vis.gl/react-google-maps';
 import { useSearchParams, useRouter } from 'next/navigation';
 
@@ -36,6 +37,33 @@ interface RouteStep {
   location?: { lat: number; lng: number };
 }
 
+interface UserAddress {
+  id: number;
+  street: string;
+  city: string;
+  postalCode: string;
+  isDefault: boolean;
+  latitude?: string;
+  longitude?: string;
+}
+
+// Minimal type for what we use from google.maps.DirectionsRoute
+// Note: We use the 'any' from @vis.gl but here we want to cast it specifically for the Legs
+interface Leg {
+  distanceMeters?: number;
+  duration?: string;
+  startLocation?: { latLng: { latitude: number, longitude: number } };
+  endLocation?: { latLng: { latitude: number, longitude: number } };
+}
+
+interface RouteInfo {
+  distanceMeters?: number;
+  duration?: string;
+  legs?: Leg[];
+  optimizedIntermediateWaypointIndex?: number[];
+  polyline?: { encodedPolyline: string };
+}
+
 function RouteViewContent() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
@@ -44,7 +72,10 @@ function RouteViewContent() {
   
   const [offers, setOffers] = useState<DriverDashboardOffer[]>([]);
   const [selectedOfferId, setSelectedOfferId] = useState<number | ''>('');
-  const [defaultAddress, setDefaultAddress] = useState<string | null>(null);
+  
+  const [addresses, setAddresses] = useState<UserAddress[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<number | ''>('');
+  const [startAddress, setStartAddress] = useState<string | null>(null);
   const [originLocation, setOriginLocation] = useState<{ lat: number; lng: number } | string | null>(null);
   
   // Map State
@@ -53,7 +84,7 @@ function RouteViewContent() {
   const [mapZoom, setMapZoom] = useState<number>(11);
   
   const [loading, setLoading] = useState(true);
-  const [routeInfo, setRouteInfo] = useState<google.maps.DirectionsRoute | null>(null);
+  const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null);
   const [mapError, setMapError] = useState<string | null>(null);
 
   // Helper to save coordinates back to the database
@@ -70,6 +101,47 @@ function RouteViewContent() {
     }
   };
 
+  const updateOriginFromAddress = React.useCallback(async (addr: UserAddress) => {
+    const addrString = `${addr.street}, ${addr.city}, ${addr.postalCode}`;
+    setStartAddress(addrString);
+    
+    if (addr.latitude && addr.longitude) {
+        const coords = { 
+            lat: parseFloat(addr.latitude), 
+            lng: parseFloat(addr.longitude) 
+        };
+        setInitialCenter(coords);
+        setMapCenter(coords); 
+        setMapZoom(13);
+        setOriginLocation(coords);
+    } else if (geocodingLib) {
+        // LAZY GEOCODE: Address exists but no coords
+        const geocoder = new geocodingLib.Geocoder();
+        try {
+            const geoRes = await geocoder.geocode({ address: addrString });
+            if (geoRes.results && geoRes.results.length > 0) {
+                const loc = geoRes.results[0].geometry.location;
+                const coords = { lat: loc.lat(), lng: loc.lng() };
+                
+                setInitialCenter(coords);
+                setMapCenter(coords);
+                setMapZoom(13);
+                setOriginLocation(coords);
+
+                // Save for next time
+                saveCoordinates(addr.id, coords.lat, coords.lng);
+            } else {
+                setOriginLocation(addrString);
+            }
+        } catch (err) {
+            console.error('Geocoding failed', err);
+            setOriginLocation(addrString);
+        }
+    } else {
+        setOriginLocation(addrString);
+    }
+  }, [geocodingLib]);
+
   // Fetch Data
   useEffect(() => {
     if (!user) return;
@@ -82,47 +154,18 @@ function RouteViewContent() {
             const dashboardData = await liftService.getDriverDashboard();
             setOffers(dashboardData.offers);
 
-            // 2. Fetch User Addresses to find default
+            // 2. Fetch User Addresses
             const addrRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/addresses`, {
                 credentials: 'include',
             });
             if (addrRes.ok) {
-                const addresses = await addrRes.json();
-                const def = addresses.find((a: any) => a.isDefault) || addresses[0];
+                const fetchedAddresses: UserAddress[] = await addrRes.json();
+                setAddresses(fetchedAddresses);
+                
+                const def = fetchedAddresses.find((a) => a.isDefault) || fetchedAddresses[0];
                 if (def) {
-                    const addrString = `${def.street}, ${def.city}, ${def.postalCode}`;
-                    setDefaultAddress(addrString);
-                    
-                    if (def.latitude && def.longitude) {
-                        const center = { 
-                            lat: parseFloat(def.latitude), 
-                            lng: parseFloat(def.longitude) 
-                        };
-                        setInitialCenter(center);
-                        setMapCenter(center); 
-                        setMapZoom(13);
-                        setOriginLocation(center);
-                    } else if (geocodingLib) {
-                        // LAZY GEOCODE: Address exists but no coords
-                        const geocoder = new geocodingLib.Geocoder();
-                        const geoRes = await geocoder.geocode({ address: addrString });
-                        if (geoRes.results && geoRes.results.length > 0) {
-                            const loc = geoRes.results[0].geometry.location;
-                            const coords = { lat: loc.lat(), lng: loc.lng() };
-                            
-                            setInitialCenter(coords);
-                            setMapCenter(coords);
-                            setMapZoom(13);
-                            setOriginLocation(coords);
-
-                            // Save for next time
-                            saveCoordinates(def.id, coords.lat, coords.lng);
-                        } else {
-                            setOriginLocation(addrString);
-                        }
-                    } else {
-                        setOriginLocation(addrString);
-                    }
+                    setSelectedAddressId(def.id);
+                    await updateOriginFromAddress(def);
                 }
             }
 
@@ -142,21 +185,32 @@ function RouteViewContent() {
     };
 
     fetchData();
-  }, [user, searchParams, geocodingLib]);
+  }, [user, searchParams, geocodingLib, updateOriginFromAddress]);
 
   const selectedOffer = useMemo(() => 
     offers.find(o => o.id === Number(selectedOfferId)), 
   [offers, selectedOfferId]);
 
-  const handleOfferChange = (e: any) => {
-      const newId = e.target.value;
+  const handleOfferChange = (e: SelectChangeEvent<unknown>) => {
+      const newId = e.target.value as number;
       setSelectedOfferId(newId);
       router.replace(`/route?offerId=${newId}`);
       setRouteInfo(null);
       setMapError(null);
   };
 
-  const handleMapError = (error: any) => {
+  const handleAddressChange = (e: SelectChangeEvent<unknown>) => {
+      const addrId = e.target.value as number;
+      setSelectedAddressId(addrId);
+      const selectedAddr = addresses.find(a => a.id === addrId);
+      if (selectedAddr) {
+          updateOriginFromAddress(selectedAddr);
+      }
+      setRouteInfo(null);
+      setMapError(null);
+  };
+
+  const handleMapError = React.useCallback((error: { code?: string }) => {
       console.error("Map Error Callback:", error);
       if (error?.code === 'REQUEST_DENIED') {
           setMapError("Google Maps Directions API is not enabled for this API Key. Please enable both 'Directions API' and 'Routes API' in Google Cloud Console.");
@@ -165,7 +219,7 @@ function RouteViewContent() {
       } else {
           setMapError("Failed to calculate route. Please try again.");
       }
-  };
+  }, []);
 
   const handleStepClick = (step: RouteStep) => {
       if (step.location) {
@@ -174,20 +228,20 @@ function RouteViewContent() {
       }
   };
 
-  const formatAddress = (addr: any) => {
+  const formatAddress = React.useCallback((addr: { street: string, city: string, postalCode: string } | null | undefined) => {
       if (!addr) return '';
       return `${addr.street}, ${addr.city}, ${addr.postalCode}`;
-  };
+  }, []);
 
   const waypoints = useMemo(() => {
       if (!selectedOffer) return [];
       return selectedOffer.passengers.map(p => formatAddress(p.pickup.address));
-  }, [selectedOffer]);
+  }, [selectedOffer, formatAddress]);
 
   const steps: RouteStep[] = useMemo(() => {
-      if (!selectedOffer || !defaultAddress || !routeInfo) return [];
+      if (!selectedOffer || !startAddress || !routeInfo) return [];
       
-      const info = routeInfo as any;
+      const info = routeInfo as RouteInfo;
       const indices: number[] = info.optimizedIntermediateWaypointIndex || 
                                 selectedOffer.passengers.map((_, i) => i);
       
@@ -207,7 +261,7 @@ function RouteViewContent() {
 
       result.push({
           label: 'Start: Your Location',
-          address: defaultAddress,
+          address: startAddress,
           time: 'Departure',
           location: startLoc
       });
@@ -270,7 +324,7 @@ function RouteViewContent() {
       });
 
       return result;
-  }, [selectedOffer, defaultAddress, routeInfo]);
+  }, [selectedOffer, startAddress, routeInfo, initialCenter, mapCenter, formatAddress]);
 
 
   if (!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY === 'YOUR_API_KEY_HERE') {
@@ -304,15 +358,15 @@ function RouteViewContent() {
 
   return (
     <PageContainer>
-      <PageHeading>Route View</PageHeading>
+      <PageHeading sx={{ mb: 2 }}>Route View</PageHeading>
       
-      {/* Top Selection */}
-      <Box sx={{ mt: 3, mb: 3 }}>
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 3, maxWidth: { sm: 800 } }}>
           <CustomSelect
-            label="Select Lift / Event"
-            value={selectedOfferId}
-            onChange={handleOfferChange}
-            sx={{ maxWidth: 400 }}
+              label="Select Lift / Event"
+              value={selectedOfferId}
+              onChange={handleOfferChange}
+              size="small"
+              sx={{ flex: 1 }}
           >
               {offers.map(offer => (
                   <MenuItem key={offer.id} value={offer.id}>
@@ -320,11 +374,25 @@ function RouteViewContent() {
                   </MenuItem>
               ))}
           </CustomSelect>
-      </Box>
+
+          <CustomSelect
+              label="Starting Address"
+              value={selectedAddressId}
+              onChange={handleAddressChange}
+              size="small"
+              sx={{ flex: 1 }}
+          >
+              {addresses.map(addr => (
+                  <MenuItem key={addr.id} value={addr.id}>
+                      {addr.street} {addr.isDefault && '(Default)'}
+                  </MenuItem>
+              ))}
+          </CustomSelect>
+      </Stack>
 
       {!selectedOffer ? (
           <InfoMessage message="No active lift offers found. Create a lift offer to see your route." />
-      ) : !defaultAddress ? (
+      ) : !startAddress ? (
           <InfoMessage message="Please set a default address in your profile to calculate the route start point." />
       ) : (
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={3} alignItems="flex-start">
@@ -350,7 +418,7 @@ function RouteViewContent() {
                     <MapController center={mapCenter} zoom={mapZoom} />
                     <Routes 
                         apiKey={GOOGLE_MAPS_API_KEY}
-                        origin={originLocation || defaultAddress}
+                        origin={originLocation || startAddress}
                         destination={formatAddress(selectedOffer.event.address)}
                         waypoints={waypoints}
                         onRouteCalculated={setRouteInfo}
@@ -378,9 +446,9 @@ function RouteViewContent() {
                         <Box sx={{ mb: 3, bgcolor: 'primary.light', p: 2, borderRadius: 1, color: 'primary.contrastText' }}>
                             <Typography variant="subtitle2" fontWeight="bold">Total Trip</Typography>
                             <Stack direction="row" justifyContent="space-between">
-                                <Typography variant="body2">Distance: {Math.round(((routeInfo as any).distanceMeters || 0) / 1000)} km</Typography>
+                                <Typography variant="body2">Distance: {Math.round(((routeInfo as RouteInfo).distanceMeters || 0) / 1000)} km</Typography>
                                 <Typography variant="body2">
-                                    Duration: ~{Math.round(parseInt((routeInfo as any).duration?.replace('s','') || '0') / 60)} mins
+                                    Duration: ~{Math.round(parseInt((routeInfo as RouteInfo).duration?.replace('s','') || '0') / 60)} mins
                                 </Typography>
                             </Stack>
                         </Box>

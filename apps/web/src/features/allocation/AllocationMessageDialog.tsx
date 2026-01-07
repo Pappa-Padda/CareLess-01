@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
-import Button from '@mui/material/Button';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CustomDialog from '@/components/shared/ui/CustomDialog';
 import CancelButton from '@/components/shared/ui/CancelButton';
@@ -53,7 +52,7 @@ export default function AllocationMessageDialog({
                     try {
                         const datePart = p.pickupTime.includes('T') ? p.pickupTime : `1970-01-01T${p.pickupTime}`;
                         time = new Date(datePart).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                    } catch (e) {
+                    } catch {
                         time = String(p.pickupTime);
                     }
                 }

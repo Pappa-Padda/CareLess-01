@@ -28,6 +28,12 @@ This agent is responsible for ensuring the codebase is in a deployable state. It
     *   Run `npm run build` from the root to trigger Turbo Repo builds.
     *   Check specific workspaces if the root build fails (e.g., `npm run build --workspace=apps/api`).
 
-3.  **Lint:**
-    *   Run `npm run lint`.
+3. **Lint:**
+
+    *   **Efficient Linting Strategy:** To avoid redundant executions, run `npm run lint > lint_results.txt 2>&1` at the start of a session.
+
+    *   Use this file as a reference for the "To-Do List" of fixes.
+
+    *   **CRITICAL:** Always delete `lint_results.txt` before finishing the task to keep the workspace clean.
+
     *   Report specific files and line numbers for violations.

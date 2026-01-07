@@ -33,14 +33,10 @@ interface AddressFormProps {
 // Helper component for Place Autocomplete on the street field
 const PlaceAutocompleteInput = ({ 
     value, 
-    onChange, 
-    onPlaceSelect,
-    required 
+    onPlaceSelect
 }: { 
     value: string, 
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void,
-    onPlaceSelect: (place: google.maps.places.Place) => void,
-    required?: boolean
+    onPlaceSelect: (place: google.maps.places.Place) => void
 }) => {
     const containerRef = React.useRef<HTMLDivElement>(null);
     const placesLib = useMapsLibrary('places');
@@ -49,8 +45,9 @@ const PlaceAutocompleteInput = ({
         if (!placesLib || !containerRef.current) return;
 
         // Create the modern Place Autocomplete Element
-        // Cast to any because @types/google.maps might not be updated for the "New" Places API components yet
-        const autocompleteElement = new (placesLib as any).PlaceAutocompleteElement({
+        // Cast via unknown to the constructor we need
+        const AutocompleteConstructor = (placesLib as unknown as { PlaceAutocompleteElement: new (options: { types: string[] }) => HTMLElement }).PlaceAutocompleteElement;
+        const autocompleteElement = new AutocompleteConstructor({
             types: ['address'],
         });
 
@@ -81,15 +78,15 @@ const PlaceAutocompleteInput = ({
         containerRef.current.appendChild(style);
 
         // Listen for the modern selection event
-        const listener = (event: any) => {
+        const listener = (event: { placePrediction: { toPlace: () => google.maps.places.Place } }) => {
             const place = event.placePrediction.toPlace();
             onPlaceSelect(place);
         };
 
-        autocompleteElement.addEventListener('gmp-select', listener);
+        autocompleteElement.addEventListener('gmp-select', listener as any as EventListener);
 
         return () => {
-            autocompleteElement.removeEventListener('gmp-select', listener);
+            autocompleteElement.removeEventListener('gmp-select', listener as any as EventListener);
         };
     }, [placesLib, onPlaceSelect]);
 
@@ -117,7 +114,7 @@ const MapUpdater = ({ center }: { center: { lat: number, lng: number } | null })
     return null;
 };
 
-export default function AddressForm({ data, onChange, required = true }: AddressFormProps) {
+export default function AddressForm({ data, onChange }: AddressFormProps) {
   const geocodingLib = useMapsLibrary('geocoding');
   const [loading, setLoading] = useState(false);
   const [mapCenter, setMapCenter] = useState<{ lat: number, lng: number } | null>(
@@ -179,7 +176,7 @@ export default function AddressForm({ data, onChange, required = true }: Address
             country: country || data.country,
             latitude: lat ? Number(lat) : undefined,
             longitude: lng ? Number(lng) : undefined,
-            link: (place as any).googleMapsURI || data.link
+            link: place.googleMapsURI || data.link
         });
 
         if (lat && lng) {
@@ -241,7 +238,7 @@ export default function AddressForm({ data, onChange, required = true }: Address
     }, 1500);
 
     return () => clearTimeout(timer);
-  }, [data.street, data.city, data.province, data.postalCode, data.country]);
+  }, [data.street, data.city, data.province, data.postalCode, data.country, data.latitude, data.longitude, handleGeocode, loading]);
 
   const handleMarkerDragEnd = (e: google.maps.MapMouseEvent) => {
       if (e.latLng) {
@@ -272,14 +269,12 @@ export default function AddressForm({ data, onChange, required = true }: Address
 
       <PlaceAutocompleteInput
         value={data.street}
-        onChange={handleChange}
         onPlaceSelect={handlePlaceSelect}
-        required={required}
       />
 
       {!data.latitude && !loading && (
         <Alert severity="info" sx={{ py: 0 }}>
-          Search for an address or click "Locate on Map" to verify the location.
+          Search for an address or click &quot;Locate on Map&quot; to verify the location.
         </Alert>
       )}
 

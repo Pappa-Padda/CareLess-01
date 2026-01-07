@@ -24,7 +24,6 @@ import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import SaveIcon from '@mui/icons-material/Save';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import ChatIcon from '@mui/icons-material/Chat';
 
 import PageContainer from '@/components/shared/ui/PageContainer';
@@ -32,14 +31,14 @@ import PageHeading from '@/components/shared/ui/PageHeading';
 import ErrorMessage from '@/components/shared/ui/ErrorMessage';
 import InfoMessage from '@/components/shared/ui/InfoMessage';
 import CustomSelect from '@/components/shared/ui/CustomSelect';
-import { allocationService, AllocationPassenger, AllocationOffer } from '@/features/allocation/allocationService';
+import { allocationService, AllocationPassenger, AllocationOffer, Group, Event } from '@/features/allocation/allocationService';
 import AllocationMessageDialog from '@/features/allocation/AllocationMessageDialog';
 import { getImageUrl } from '@/utils/images';
 
 export default function AllocationConsolePage() {
-  const [groups, setGroups] = useState<any[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<number | ''>('');
-  const [events, setEvents] = useState<any[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<number | ''>('');
   
   const [loading, setLoading] = useState(false);
@@ -64,7 +63,7 @@ export default function AllocationConsolePage() {
         if (data.groups.length > 0) {
           setSelectedGroup(data.groups[0].id);
         }
-      } catch (err) {
+      } catch {
         setError('Failed to load admin groups');
       }
     };
@@ -84,7 +83,7 @@ export default function AllocationConsolePage() {
           }
           setUnassigned([]);
           setOffers([]);
-        } catch (err) {
+        } catch {
           setError('Failed to load events');
         }
       };
@@ -99,7 +98,7 @@ export default function AllocationConsolePage() {
       setUnassigned(data.unassigned);
       setOffers(data.offers);
       setHasChanges(false);
-    } catch (err) {
+    } catch {
       setError('Failed to load allocation data');
     } finally {
       setDataLoading(false);
@@ -173,9 +172,9 @@ export default function AllocationConsolePage() {
   };
 
   const handleAutoAssign = () => {
-    let localUnassigned = [...unassigned];
-    let localOffers = offers.map(o => ({ ...o, passengers: [...o.passengers] }));
-    let totalSeats = localOffers.reduce((sum, o) => sum + (o.totalSeats - o.passengers.length), 0);
+    const localUnassigned = [...unassigned];
+    const localOffers = offers.map(o => ({ ...o, passengers: [...o.passengers] }));
+    const totalSeats = localOffers.reduce((sum, o) => sum + (o.totalSeats - o.passengers.length), 0);
 
     if (localUnassigned.length > totalSeats) {
         setError(`Not enough seats! ${localUnassigned.length - totalSeats} passengers will remain unassigned.`);
@@ -208,8 +207,9 @@ export default function AllocationConsolePage() {
         await allocationService.clearAllocations(Number(selectedEvent));
         setSuccess('All allocations cleared successfully!');
         loadEventData(Number(selectedEvent));
-    } catch (err: any) {
-        setError(err.message || 'Failed to clear allocations');
+    } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to clear allocations';
+        setError(message);
     } finally {
         setLoading(false);
     }
@@ -226,8 +226,9 @@ export default function AllocationConsolePage() {
       setSuccess('Assignments saved successfully!');
       setHasChanges(false);
       loadEventData(Number(selectedEvent));
-    } catch (err: any) {
-      setError(err.message || 'Failed to save assignments');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to save assignments';
+      setError(message);
     } finally {
       setLoading(false);
     }

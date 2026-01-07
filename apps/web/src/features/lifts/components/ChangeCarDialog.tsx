@@ -12,12 +12,13 @@ import CancelButton from '@/components/shared/ui/CancelButton';
 import SubmitButton from '@/components/shared/ui/SubmitButton';
 import { carService } from '@/features/cars/carService';
 import { Car } from '@/features/cars/types';
+import { CarUpdateResult } from '@/features/lifts/liftService';
 
 interface ChangeCarDialogProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (carId: number, force?: boolean) => Promise<any>; // Returns warning object if conflict
-  currentCarId: number;
+  onSubmit: (carId: number, force?: boolean) => Promise<CarUpdateResult>; // Returns warning object if conflict
+  currentCarId?: number;
 }
 
 export default function ChangeCarDialog({ open, onClose, onSubmit, currentCarId }: ChangeCarDialogProps) {
@@ -35,8 +36,10 @@ export default function ChangeCarDialog({ open, onClose, onSubmit, currentCarId 
         try {
             const data = await carService.getCars();
             setCars(data.cars);
-            setSelectedCar(currentCarId);
-        } catch (err) {
+            if (currentCarId !== undefined) {
+                setSelectedCar(currentCarId);
+            }
+        } catch {
             setError('Failed to load cars');
         }
       };
@@ -58,17 +61,17 @@ export default function ChangeCarDialog({ open, onClose, onSubmit, currentCarId 
         if (result && result.code === 'CAPACITY_WARNING') {
             setWarning({
                 code: result.code,
-                message: result.error,
-                currentPassengers: result.currentPassengers,
-                newCapacity: result.newCapacity
+                message: result.error || 'Capacity warning',
+                currentPassengers: result.currentPassengers || 0,
+                newCapacity: result.newCapacity || 0
             });
             setLoading(false);
             return;
         }
 
         onClose();
-    } catch (err: any) {
-        setError(err.message || 'Failed to update car');
+    } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'Failed to update car');
     } finally {
         if (!warning) setLoading(false); // Keep loading false if we hit warning
     }
@@ -80,8 +83,8 @@ export default function ChangeCarDialog({ open, onClose, onSubmit, currentCarId 
     try {
         await onSubmit(Number(selectedCar), true); // Force update
         onClose();
-    } catch (err: any) {
-        setError(err.message || 'Failed to force update car');
+    } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'Failed to force update car');
     } finally {
         setLoading(false);
     }

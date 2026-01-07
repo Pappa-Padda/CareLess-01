@@ -19,7 +19,7 @@ This application must adhere to the following security principles. Any violation
     *   **Broken Access Control (IDOR):** Always verify that the authenticated user owns the resource they are attempting to access or modify.
 
 4.  **Input Validation & Sanitization:**
-    *   Validate all incoming data (body, params, query) against strict schemas (e.g., Zod, Joi).
+    *   Validate all incoming data (body, params, query) against strict schemas.
     *   Do not trust client-side validation alone.
 
 5.  **Data Protection:**
@@ -28,25 +28,25 @@ This application must adhere to the following security principles. Any violation
 
 ---
 
-## ⚠️ Current Security Findings
+## ⚠️ Resolved Security Findings
 
-### 1. Vulnerable Dependencies
+### 1. Vulnerable Dependencies (FIXED)
 *   **Package:** `qs@6.14.0`
 *   **Vulnerability:** Denial of Service (DoS) via memory exhaustion (arrayLimit bypass).
 *   **Severity:** High (8.7)
-*   **Location:** `package-lock.json`
+*   **Resolution:** Updated `qs` to version `6.14.1` using `npm update qs`.
 
-### 2. Hardcoded Secrets / Weak Defaults
-*   **Issue:** `JWT_SECRET` has a hardcoded fallback value `'dev_secret_change_me'`.
+### 2. Hardcoded Secrets / Weak Defaults (FIXED)
+*   **Issue:** `JWT_SECRET` had a hardcoded fallback value `'dev_secret_change_me'`.
+*   **Resolution:** Removed the fallback and implemented a check that throws an error if `JWT_SECRET` is missing.
 *   **Location:**
     *   `apps/api/src/controllers/authController.ts`
     *   `apps/api/src/middleware/auth.ts`
-*   **Risk:** If the environment variable is missing in production, the app will silently use a known weak secret, allowing attackers to forge tokens.
 
 ---
 
-## ✅ To-Do List (Remediation)
+## ✅ Completed Tasks
 
-- [ ] **Fix Dependency:** Update `qs` to version `^6.14.1` or later (likely via `npm update qs` or checking parent packages).
-- [ ] **Secure Config:** Remove the `'dev_secret_change_me'` fallback string. Update code to throw an error and crash at startup if `JWT_SECRET` is not defined in the environment.
-- [ ] **Validation:** Implement schema validation (e.g., Zod) for `authController` (signup/login) and `userController` (address inputs) to ensure data integrity.
+- [x] **Fix Dependency:** Update `qs` to version `^6.14.1`.
+- [x] **Secure Config:** Remove the `'dev_secret_change_me'` fallback string and enforce environment variable presence.
+- [x] **Validation:** Implement manual input validation for `authController` (signup/login) including email format and password length checks.

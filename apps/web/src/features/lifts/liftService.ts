@@ -110,6 +110,13 @@ export interface DriverDashboardOffer {
   }[];
 }
 
+export interface CarUpdateResult {
+  code?: string;
+  error?: string;
+  currentPassengers?: number;
+  newCapacity?: number;
+}
+
 
 export const liftService = {
   // Requests
@@ -214,7 +221,7 @@ export const liftService = {
     if (!res.ok) throw new Error('Failed to decline allocation');
   },
 
-  updateLiftOfferCar: async (offerId: number, carId: number, force: boolean = false): Promise<any> => {
+  updateLiftOfferCar: async (offerId: number, carId: number, force: boolean = false): Promise<CarUpdateResult> => {
     const res = await fetch(`${API_URL}/lift-offers/${offerId}/car`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },

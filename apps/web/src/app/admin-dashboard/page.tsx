@@ -42,9 +42,9 @@ export default function AdminDashboardPage() {
             try {
                 const data = await adminService.getDashboardStats();
                 setStats(data);
-            } catch (err) {
-                setError('Failed to load dashboard statistics.');
-            } finally {
+        } catch {
+            setError('Failed to load dashboard data');
+        } finally {
                 setLoading(false);
             }
         };

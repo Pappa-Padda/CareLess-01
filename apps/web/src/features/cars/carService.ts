@@ -2,6 +2,12 @@ import { Car, CreateCarDTO, UpdateCarDTO } from './types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
+export interface DefaultCarResult {
+  code?: string;
+  count?: number;
+  message?: string;
+}
+
 export const carService = {
   getCars: async (): Promise<{ cars: Car[] }> => {
     const res = await fetch(`${API_URL}/cars`, {
@@ -41,7 +47,7 @@ export const carService = {
     if (!res.ok) throw new Error('Failed to delete car');
   },
 
-  setDefaultCar: async (id: number, updateFutureOffers?: boolean): Promise<any> => {
+  setDefaultCar: async (id: number, updateFutureOffers?: boolean): Promise<DefaultCarResult> => {
     const res = await fetch(`${API_URL}/cars/${id}/default`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },

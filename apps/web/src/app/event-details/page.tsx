@@ -71,7 +71,7 @@ function EventDetailsContent() {
     } finally {
       setIsLoading(false);
     }
-  }, [eventId]);
+  }, [eventId, displayDate]);
 
   useEffect(() => {
     fetchEventDetails();

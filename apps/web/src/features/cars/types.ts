@@ -19,4 +19,6 @@ export interface CreateCarDTO {
   seatCapacity: number;
 }
 
-export interface UpdateCarDTO extends Partial<CreateCarDTO> {}
+export interface UpdateCarDTO extends Partial<CreateCarDTO> {
+  id?: number;
+}

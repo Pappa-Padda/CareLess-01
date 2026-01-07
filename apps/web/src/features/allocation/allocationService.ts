@@ -22,6 +22,24 @@ export interface AllocationOffer {
   }[];
 }
 
+export interface Group {
+  id: number;
+  name: string;
+  description: string | null;
+  image: string | null;
+}
+
+export interface Event {
+  id: number;
+  name: string;
+  description: string | null;
+  date: string;
+  startTime: string;
+  endTime: string;
+  groupId: number;
+  addressId: number;
+}
+
 export interface AllocationData {
   unassigned: AllocationPassenger[];
   offers: AllocationOffer[];
