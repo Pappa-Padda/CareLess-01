@@ -296,7 +296,11 @@ export default function EventListPage() {
 
     if (cars.length === 0) return; 
 
-    if (cars.length === 1) {
+    const defaultCar = cars.find(c => c.isDefault);
+
+    if (defaultCar) {
+        createOffer(realId, dateStr, virtualId, defaultCar);
+    } else if (cars.length === 1) {
         createOffer(realId, dateStr, virtualId, cars[0]);
     } else {
         setSelectedEventForOffer({ id: realId, date: dateStr });
@@ -417,7 +421,14 @@ export default function EventListPage() {
                     );
                   }
                   if (column.id === 'address') {
-                    return <Typography variant="body2">{event.address?.city || event.address?.street || '-'}</Typography>;
+                    const addr = event.address;
+                    if (!addr) return '-';
+                    return (
+                        <Box>
+                            <Typography variant="body2">{addr.nickname || addr.city}</Typography>
+                            {addr.nickname && <Typography variant="caption" color="text.secondary">{addr.street}</Typography>}
+                        </Box>
+                    );
                   }
                   if (column.id === 'actions') {
                     const virtualId = String(event.id);

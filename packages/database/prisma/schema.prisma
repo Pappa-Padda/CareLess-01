@@ -21,6 +21,7 @@ generator client {
 
 model Address {
   id         Int      @id @default(autoincrement()) @map("Address_ID")
+  nickname   String?  @map("Nickname")
   street     String   @map("Street")
   city       String   @map("City")
   province   String   @map("Province")
@@ -67,6 +68,7 @@ model AddressList {
   addressId Int @map("Address_ID")
   userId    Int @map("User_ID")
   rank      Int @default(1) @map("Rank")
+  isDefault Boolean @default(false) @map("Is_Default")
 
   // Relations
   address Address @relation(fields: [addressId], references: [id], onDelete: Cascade)
@@ -133,6 +135,7 @@ model Car {
   licensePlate String @map("License_Plate")
   color        String @default("White") @map("Color")
   seatCapacity Int    @map("Seat_Capacity")
+  isDefault    Boolean @default(false) @map("Is_Default")
 
   // Relations
   driver   Driver          @relation(fields: [driverId], references: [id], onDelete: Cascade)

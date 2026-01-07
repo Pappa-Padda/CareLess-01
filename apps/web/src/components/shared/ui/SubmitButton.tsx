@@ -19,6 +19,14 @@ export default function SubmitButton({
       variant="contained"
       disabled={isSubmitting}
       {...props}
+      sx={{
+        '&.Mui-disabled': {
+          backgroundImage: 'none',
+          backgroundColor: 'action.disabledBackground',
+          color: 'action.disabled',
+        },
+        ...props.sx,
+      }}
     >
       {isSubmitting ? (
         <>

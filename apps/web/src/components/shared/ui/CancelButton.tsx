@@ -6,6 +6,12 @@ export default function CancelButton(props: ButtonProps) {
     <Button
       variant="text"
       {...props}
+      sx={{
+        '&.Mui-disabled': {
+          color: 'action.disabled',
+        },
+        ...props.sx,
+      }}
     />
   );
 }

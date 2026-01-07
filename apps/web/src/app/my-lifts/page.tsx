@@ -12,15 +12,13 @@ import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import { useRouter } from 'next/navigation';
 
-import EventIcon from '@mui/icons-material/Event';
-import PersonIcon from '@mui/icons-material/Person';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import PhoneIcon from '@mui/icons-material/Phone';
+import PersonIcon from '@mui/icons-material/Person';
+import LinkIcon from '@mui/icons-material/Link';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
-import LinkIcon from '@mui/icons-material/Link';
 import PendingIcon from '@mui/icons-material/Pending';
 
 import PageContainer from '@/components/shared/ui/PageContainer';
@@ -218,7 +216,7 @@ export default function MyLiftsPage() {
                   <Stack direction="row" alignItems="center" spacing={1} mt={1}>
                     <LocationOnIcon fontSize="small" color="action" />
                     <Typography variant="body2">
-                      Pickup at {item.pickup.address.street}, {item.pickup.address.city} at {formatTime(item.pickup.time)}
+                      Pickup at {item.pickup.address.nickname ? `${item.pickup.address.nickname} (${item.pickup.address.street})` : `${item.pickup.address.street}, ${item.pickup.address.city}`} at {formatTime(item.pickup.time)}
                     </Typography>
                     {item.pickup.address.link && (
                         <Tooltip title={item.pickup.address.link}>

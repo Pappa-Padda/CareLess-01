@@ -15,13 +15,10 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 import GroupIcon from '@mui/icons-material/Group';
 import PersonIcon from '@mui/icons-material/Person';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
-import ListAltIcon from '@mui/icons-material/ListAlt';
 import LocalTaxiIcon from '@mui/icons-material/LocalTaxi';
 import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
 import EmojiTransportationIcon from '@mui/icons-material/EmojiTransportation';
 import SettingsSuggestIcon from '@mui/icons-material/SettingsSuggest';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import BookmarkIcon from '@mui/icons-material/Bookmark';
 import MapIcon from '@mui/icons-material/Map';
 import ChatIcon from '@mui/icons-material/Chat';
 import HomeIcon from '@mui/icons-material/Home';
@@ -32,6 +29,7 @@ import Tooltip from '@mui/material/Tooltip';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { allocationService } from '@/features/allocation/allocationService';
 import ColorModeIconDropdown from '../../shared-theme/ColorModeIconDropdown';
 
 const drawerWidth = 240;
@@ -40,20 +38,26 @@ type MenuItem =
   | { kind: 'header'; title: string }
   | { kind: 'item'; text: string; icon: React.ReactNode; href: string };
 
-const menuItems: MenuItem[] = [
+const generalItems: MenuItem[] = [
   { kind: 'header', title: 'General Setup' },
   { kind: 'item', text: 'Profile Setup', icon: <PersonIcon />, href: '/profile' },
   { kind: 'item', text: 'Groups', icon: <GroupIcon />, href: '/groups' },
+];
 
+const passengerItems: MenuItem[] = [
   { kind: 'header', title: 'Passenger Core' },
   { kind: 'item', text: 'Event List', icon: <FormatListBulletedIcon />, href: '/event-list' },
   { kind: 'item', text: 'My Lifts', icon: <EmojiTransportationIcon />, href: '/my-lifts' },
+];
 
+const driverItems: MenuItem[] = [
   { kind: 'header', title: 'Driver Core' },
   { kind: 'item', text: 'Car Management', icon: <DirectionsCarIcon />, href: '/cars' },
   { kind: 'item', text: 'My Lift Offers', icon: <LocalTaxiIcon />, href: '/lift-offers' },
   { kind: 'item', text: 'Route View', icon: <MapIcon />, href: '/route' },
+];
 
+const adminItems: MenuItem[] = [
   { kind: 'header', title: 'Admin Management' },
   { kind: 'item', text: 'Admin Dashboard', icon: <DashboardIcon />, href: '/admin-dashboard' },
   { kind: 'item', text: 'Event Management', icon: <EventIcon />, href: '/admin/events' },
@@ -66,6 +70,28 @@ export default function CarelessSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuth();
+  const [isAdmin, setIsAdmin] = React.useState(false);
+
+  React.useEffect(() => {
+    const checkAdmin = async () => {
+      if (user) {
+        try {
+          const data = await allocationService.getAdminGroups();
+          setIsAdmin(data.groups && data.groups.length > 0);
+        } catch (err) {
+          console.error('Failed to check admin status', err);
+        }
+      }
+    };
+    checkAdmin();
+  }, [user]);
+
+  const menuItems = [
+    ...generalItems,
+    ...passengerItems,
+    ...driverItems,
+    ...(isAdmin ? adminItems : []),
+  ];
 
   return (
     <Drawer

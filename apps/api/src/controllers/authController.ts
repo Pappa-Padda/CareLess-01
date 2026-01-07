@@ -3,14 +3,25 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { prisma } from '@repo/database';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_change_me';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  throw new Error('FATAL: JWT_SECRET environment variable is not defined.');
+}
 
 export const signin = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
-    if (!email || !password) return res.status(400).json({ error: 'Missing credentials' });
+    
+    if (typeof email !== 'string' || typeof password !== 'string') {
+      return res.status(400).json({ error: 'Invalid input format' });
+    }
 
-    const user = await prisma.user.findFirst({ where: { email } });
+    if (!email.trim() || !password.trim()) {
+      return res.status(400).json({ error: 'Missing credentials' });
+    }
+
+    const user = await prisma.user.findFirst({ where: { email: email.toLowerCase().trim() } });
     if (!user || !user.passwordHash) return res.status(401).json({ error: 'Invalid credentials' });
 
     const valid = await bcrypt.compare(password, user.passwordHash as string);
@@ -44,7 +55,25 @@ export const signup = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (
+      typeof name !== 'string' || 
+      typeof email !== 'string' || 
+      typeof password !== 'string' || 
+      typeof phoneNumber !== 'string'
+    ) {
+      return res.status(400).json({ error: 'Invalid input format' });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      return res.status(400).json({ error: 'Invalid email format' });
+    }
+
+    if (password.length < 8) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters long' });
+    }
+
+    const existingUser = await prisma.user.findUnique({ where: { email: email.toLowerCase().trim() } });
     if (existingUser) {
       return res.status(400).json({ error: 'User already exists' });
     }
@@ -53,10 +82,10 @@ export const signup = async (req: Request, res: Response) => {
 
     const user = await prisma.user.create({
       data: {
-        name,
-        email,
+        name: name.trim(),
+        email: email.toLowerCase().trim(),
         passwordHash,
-        phoneNumber,
+        phoneNumber: phoneNumber.trim(),
       },
     });
 

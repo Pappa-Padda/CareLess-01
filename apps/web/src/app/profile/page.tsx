@@ -17,6 +17,12 @@ import Badge from '@mui/material/Badge';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import Tooltip from '@mui/material/Tooltip';
 
+import StarIcon from '@mui/icons-material/Star';
+import StarBorderIcon from '@mui/icons-material/StarBorder';
+import Alert from '@mui/material/Alert';
+
+import { APIProvider } from '@vis.gl/react-google-maps';
+
 import PageContainer from '@/components/shared/ui/PageContainer';
 import PageHeading from '@/components/shared/ui/PageHeading';
 import CustomTextField from '@/components/shared/ui/CustomTextField';
@@ -29,26 +35,29 @@ import { useAuth } from '@/context/AuthContext';
 
 interface Address {
   id: number;
+  nickname?: string;
   street: string;
   city: string;
   province: string;
   postalCode: string;
   country: string;
   link?: string;
+  latitude?: number | string;
+  longitude?: number | string;
   rank?: number;
+  isDefault: boolean;
 }
 
 const addressColumns: Column<Address>[] = [
+  { id: 'nickname', label: 'Nickname', sortable: true },
   { id: 'street', label: 'Street', sortable: true },
   { id: 'city', label: 'City', sortable: true },
-  { id: 'province', label: 'Province', sortable: true },
-  { id: 'postalCode', label: 'Postal Code', sortable: true },
-  { id: 'country', label: 'Country', sortable: true },
+  { id: 'isDefault', label: 'Status', align: 'center', width: 100 },
   { id: 'link', label: 'Link', width: 80, align: 'center' },
-  { id: 'actions', label: 'Actions', align: 'center', width: 120 },
+  { id: 'actions', label: 'Actions', align: 'center', width: 150 },
 ];
 
-export default function ProfilePage() {
+function ProfileContent() {
   const { user, refreshUser } = useAuth();
   
   // User Profile State
@@ -73,6 +82,7 @@ export default function ProfilePage() {
   const [isAddressDialogOpen, setIsAddressDialogOpen] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
   const [addressFormData, setAddressFormData] = useState<AddressFormData>({
+    nickname: '',
     street: '',
     city: '',
     province: '',
@@ -81,6 +91,10 @@ export default function ProfilePage() {
     link: '',
   });
   const [isAddressSubmitting, setIsAddressSubmitting] = useState(false);
+
+  // Warning State
+  const [warningOpen, setWarningOpen] = useState(false);
+  const [warningData, setWarningData] = useState<{ count: number, addressId: number } | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -174,6 +188,13 @@ export default function ProfilePage() {
 
   const handleAddressSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validation: Ensure coordinates are present
+    if (!addressFormData.latitude || !addressFormData.longitude) {
+      alert("Please verify your address on the map or select a suggestion from the search box before saving.");
+      return;
+    }
+
     setIsAddressSubmitting(true);
     try {
       const url = selectedAddress 
@@ -204,16 +225,19 @@ export default function ProfilePage() {
     if (address) {
       setSelectedAddress(address);
       setAddressFormData({
+        nickname: address.nickname || '',
         street: address.street,
         city: address.city,
         province: address.province,
         postalCode: address.postalCode,
         country: address.country,
         link: address.link || '',
+        latitude: address.latitude ? Number(address.latitude) : undefined,
+        longitude: address.longitude ? Number(address.longitude) : undefined,
       });
     } else {
       setSelectedAddress(null);
-      setAddressFormData({ street: '', city: '', province: '', postalCode: '', country: '', link: '' });
+      setAddressFormData({ nickname: '', street: '', city: '', province: '', postalCode: '', country: '', link: '' });
     }
     setIsAddressDialogOpen(true);
   };
@@ -232,6 +256,31 @@ export default function ProfilePage() {
       }
     } catch (error) {
       console.error('Failed to delete address', error);
+    }
+  };
+
+  const handleSetDefaultAddress = async (id: number, updatePickups?: boolean) => {
+    try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/addresses/${id}/default`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ updateFuturePickups: updatePickups }),
+            credentials: 'include',
+        });
+
+        if (res.status === 409) {
+            const data = await res.json();
+            setWarningData({ count: data.count, addressId: id });
+            setWarningOpen(true);
+            return;
+        }
+
+        if (res.ok) {
+            setWarningOpen(false);
+            fetchAddresses();
+        }
+    } catch (error) {
+        console.error('Failed to set default address', error);
     }
   };
 
@@ -319,6 +368,16 @@ export default function ProfilePage() {
             sortConfig={sortConfig}
             onSort={handleSort}
             renderCell={(item, column) => {
+              if (column.id === 'nickname') {
+                return item.nickname || '-';
+              }
+              if (column.id === 'isDefault') {
+                return item.isDefault ? (
+                  <Badge badgeContent="Default" color="primary" sx={{ '& .MuiBadge-badge': { fontSize: '0.65rem' } }}>
+                    <Box />
+                  </Badge>
+                ) : null;
+              }
               if (column.id === 'link') {
                 return item.link ? (
                   <Tooltip title={item.link}>
@@ -338,6 +397,18 @@ export default function ProfilePage() {
               if (column.id === 'actions') {
                 return (
                   <Stack direction="row" spacing={1} justifyContent="center">
+                    <Tooltip title={item.isDefault ? "Default Address" : "Set as Default"}>
+                        <span>
+                            <IconButton
+                                color="warning"
+                                size="small"
+                                onClick={() => handleSetDefaultAddress(item.id)}
+                                disabled={item.isDefault}
+                            >
+                                {item.isDefault ? <StarIcon fontSize="small" /> : <StarBorderIcon fontSize="small" />}
+                            </IconButton>
+                        </span>
+                    </Tooltip>
                     <IconButton
                       color="primary"
                       size="small"
@@ -454,6 +525,48 @@ export default function ProfilePage() {
           onChange={(data) => setAddressFormData(data)}
         />
       </CustomDialog>
+
+      {/* Future Pickup Warning Dialog */}
+      <CustomDialog
+        open={warningOpen}
+        onClose={() => setWarningOpen(false)}
+        title="Update Future Pickups?"
+        actions={
+            <>
+                <Button onClick={() => setWarningOpen(false)}>Cancel</Button>
+                <Button 
+                    onClick={() => handleSetDefaultAddress(warningData!.addressId, false)} 
+                    variant="outlined"
+                >
+                    No, keep old address
+                </Button>
+                <Button 
+                    onClick={() => handleSetDefaultAddress(warningData!.addressId, true)} 
+                    variant="contained" 
+                    color="primary"
+                >
+                    Yes, update pick-ups
+                </Button>
+            </>
+        }
+      >
+        <Stack spacing={2}>
+            <Alert severity="info">
+                You have {warningData?.count} upcoming lifts with a different pick-up address.
+            </Alert>
+            <Typography>
+                Do you want to update these lifts to use your new default address?
+            </Typography>
+        </Stack>
+      </CustomDialog>
     </PageContainer>
+  );
+}
+
+export default function ProfilePage() {
+  return (
+    <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''}>
+      <ProfileContent />
+    </APIProvider>
   );
 }

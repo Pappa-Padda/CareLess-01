@@ -10,7 +10,6 @@ import Chip from '@mui/material/Chip';
 import Avatar from '@mui/material/Avatar';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
-import Divider from '@mui/material/Divider';
 import Grid from '@mui/material/Grid';
 import { useRouter } from 'next/navigation';
 
@@ -21,6 +20,7 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import PhoneIcon from '@mui/icons-material/Phone';
 import MapIcon from '@mui/icons-material/Map';
+import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import InfoIcon from '@mui/icons-material/Info';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -31,7 +31,8 @@ import PageHeading from '@/components/shared/ui/PageHeading';
 import ErrorMessage from '@/components/shared/ui/ErrorMessage';
 import InfoMessage from '@/components/shared/ui/InfoMessage';
 import { useAuth } from '@/context/AuthContext';
-import { liftService, DriverDashboardOffer } from '@/features/lifts/liftService';
+import { liftService, DriverDashboardOffer, CarUpdateResult } from '@/features/lifts/liftService';
+import ChangeCarDialog from '@/features/lifts/components/ChangeCarDialog';
 import { formatTime } from '@/utils/time';
 import { getImageUrl } from '@/utils/images';
 
@@ -42,6 +43,10 @@ export default function MyLiftOffersPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Edit Car State
+  const [editCarOpen, setEditCarOpen] = useState(false);
+  const [selectedOfferForEdit, setSelectedOfferForEdit] = useState<DriverDashboardOffer | null>(null);
+
   const fetchDashboard = useCallback(async () => {
     if (!user) {
       setIsLoading(false);
@@ -51,7 +56,7 @@ export default function MyLiftOffersPage() {
     try {
       const data = await liftService.getDriverDashboard();
       setOffers(data.offers);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to fetch driver dashboard:', err);
       setError('Failed to load your lift offers. Please try again.');
     } finally {
@@ -71,9 +76,29 @@ export default function MyLiftOffersPage() {
     try {
       await liftService.deleteOffer(offer.event.id, offer.date);
       setOffers(prev => prev.filter(o => o.id !== offer.id));
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to delete offer:', err);
       setError('Failed to cancel offer. Please try again.');
+    }
+  };
+
+  const handleUpdateCar = async (carId: number, force?: boolean): Promise<CarUpdateResult> => {
+    if (!selectedOfferForEdit) return {};
+
+    try {
+        // This returns either success or the warning object
+        const result = await liftService.updateLiftOfferCar(selectedOfferForEdit.id, carId, force);
+        
+        // If successful (no code), reload dashboard
+        if (!result.code) {
+            fetchDashboard();
+            setEditCarOpen(false); // Close dialog if success
+        }
+        
+        return result; // Pass result back to dialog for handling warnings
+    } catch (err: unknown) {
+        console.error('Failed to update car:', err);
+        throw err;
     }
   };
 
@@ -181,7 +206,7 @@ export default function MyLiftOffersPage() {
                     <Stack spacing={2} sx={{ mt: 1 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <DirectionsCarIcon color="action" fontSize="small" />
-                            <Box>
+                            <Box sx={{ flexGrow: 1 }}>
                                 <Typography variant="body2" fontWeight="bold">
                                     {offer.car.make} {offer.car.model}
                                 </Typography>
@@ -189,6 +214,17 @@ export default function MyLiftOffersPage() {
                                     {offer.car.licensePlate}
                                 </Typography>
                             </Box>
+                            <Tooltip title="Change Car">
+                                <IconButton 
+                                    size="small" 
+                                    onClick={() => {
+                                        setSelectedOfferForEdit(offer);
+                                        setEditCarOpen(true);
+                                    }}
+                                >
+                                    <EditIcon fontSize="small" />
+                                </IconButton>
+                            </Tooltip>
                         </Box>
 
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -288,6 +324,13 @@ export default function MyLiftOffersPage() {
           ))}
         </Stack>
       )}
+
+        <ChangeCarDialog
+            open={editCarOpen}
+            onClose={() => setEditCarOpen(false)}
+            onSubmit={handleUpdateCar}
+            currentCarId={selectedOfferForEdit?.car.id}
+        />
     </PageContainer>
   );
 }

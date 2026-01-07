@@ -7,6 +7,7 @@ export interface Car {
   licensePlate: string;
   color: string;
   seatCapacity: number;
+  isDefault: boolean;
 }
 
 export interface CreateCarDTO {
@@ -18,4 +19,6 @@ export interface CreateCarDTO {
   seatCapacity: number;
 }
 
-export interface UpdateCarDTO extends Partial<CreateCarDTO> {}
+export interface UpdateCarDTO extends Partial<CreateCarDTO> {
+  id?: number;
+}

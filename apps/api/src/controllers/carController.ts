@@ -137,3 +137,99 @@ export const deleteCar = async (req: Request, res: Response) => {
     return res.status(500).json({ error: 'Failed to delete car' });
   }
 };
+
+export const setDefaultCar = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.userId;
+    const carId = parseInt(req.params.id);
+    const { updateFutureOffers } = req.body;
+
+    if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+    if (isNaN(carId)) return res.status(400).json({ error: 'Invalid car ID' });
+
+    // Verify ownership
+    const newDefaultCar = await prisma.car.findUnique({ where: { id: carId } });
+    if (!newDefaultCar) return res.status(404).json({ error: 'Car not found' });
+    if (newDefaultCar.driverId !== userId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    // Check for future offers using a DIFFERENT car
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    
+    const futureOffers = await prisma.liftOffer.findMany({
+        where: {
+            driverId: userId,
+            date: { gte: now },
+            carId: { not: carId } // Offers NOT using the new default
+        },
+        include: { allocations: true }
+    });
+
+    if (futureOffers.length > 0 && updateFutureOffers === undefined) {
+        return res.status(409).json({
+            error: 'You have upcoming lift offers using a different car.',
+            code: 'FUTURE_OFFERS_WARNING',
+            count: futureOffers.length
+        });
+    }
+
+    // Transaction to update flags and optionally offers
+    await prisma.$transaction(async (tx) => {
+      // 1. Unset default for all user's cars
+      await tx.car.updateMany({
+        where: { driverId: userId },
+        data: { isDefault: false },
+      });
+      
+      // 2. Set new default
+      await tx.car.update({
+        where: { id: carId },
+        data: { isDefault: true },
+      });
+
+      // 3. Update future offers if requested
+      if (updateFutureOffers && futureOffers.length > 0) {
+          for (const offer of futureOffers) {
+              const currentPassengerCount = offer.allocations.length;
+              const newAvailableSeats = newDefaultCar.seatCapacity - 1;
+
+              // Handle Capacity: Remove passengers if too small
+              if (currentPassengerCount > newAvailableSeats) {
+                  // Remove passengers
+                  await tx.passengerAllocation.deleteMany({
+                      where: { liftOfferId: offer.id }
+                  });
+                  // Reset requests
+                  const passengerIds = offer.allocations.map(a => a.passengerId);
+                  if (passengerIds.length > 0) {
+                      await tx.liftRequest.updateMany({
+                          where: { 
+                              eventId: offer.eventId, 
+                              date: offer.date,
+                              passengerId: { in: passengerIds }
+                          },
+                          data: { status: 'PENDING' }
+                      });
+                  }
+              }
+
+              // Update the offer
+              await tx.liftOffer.update({
+                  where: { id: offer.id },
+                  data: {
+                      carId: carId,
+                      availableSeats: newAvailableSeats
+                  }
+              });
+          }
+      }
+    });
+
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('Error setting default car:', err);
+    return res.status(500).json({ error: 'Failed to set default car' });
+  }
+};

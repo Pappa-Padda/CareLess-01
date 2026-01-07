@@ -1,12 +1,13 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { Box, Button } from '@mui/material';
+import { Box, Button, Typography, Alert, Stack } from '@mui/material';
 import { Add } from '@mui/icons-material';
 import ErrorMessage from '@/components/shared/ui/ErrorMessage';
 import PageContainer from '@/components/shared/ui/PageContainer';
 import PageHeading from '@/components/shared/ui/PageHeading';
 import CarTable from '@/features/cars/components/CarTable';
 import CarFormDialog from '@/features/cars/components/CarFormDialog';
+import CustomDialog from '@/components/shared/ui/CustomDialog';
 import { carService } from '@/features/cars/carService';
 import { CreateCarDTO, Car, UpdateCarDTO } from '@/features/cars/types';
 import { useAuth } from '@/context/AuthContext';
@@ -18,6 +19,10 @@ export default function CarsPage() {
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedCar, setSelectedCar] = useState<Car | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
+
+  // Warning State
+  const [warningOpen, setWarningOpen] = useState(false);
+  const [warningData, setWarningData] = useState<{ count: number, carId: number } | null>(null);
 
   const fetchCars = React.useCallback(async () => {
     try {
@@ -60,10 +65,28 @@ export default function CarsPage() {
     }
   };
 
+  const handleSetDefault = async (id: number, updateOffers?: boolean) => {
+    try {
+        const result = await carService.setDefaultCar(id, updateOffers);
+        
+        if (result && result.code === 'FUTURE_OFFERS_WARNING') {
+            setWarningData({ count: result.count || 0, carId: id });
+            setWarningOpen(true);
+            return;
+        }
+
+        setWarningOpen(false);
+        setWarningData(null);
+        fetchCars();
+    } catch (err) {
+        console.error(err);
+        setError('Failed to set default car');
+    }
+  };
+
   const handleSubmit = async (data: CreateCarDTO | UpdateCarDTO) => {
-    const dataWithId = data as any;
-    if (dataWithId.id) {
-      await carService.updateCar(dataWithId.id, data);
+    if ('id' in data && data.id) {
+      await carService.updateCar(data.id, data);
     } else {
       await carService.createCar(data as CreateCarDTO);
     }
@@ -92,6 +115,7 @@ export default function CarsPage() {
         isLoading={loading}
         onEdit={handleEdit}
         onDelete={handleDelete}
+        onSetDefault={(id) => handleSetDefault(id)}
       />
 
       <CarFormDialog
@@ -100,6 +124,42 @@ export default function CarsPage() {
         onSubmit={handleSubmit}
         initialData={selectedCar}
       />
+
+      <CustomDialog
+        open={warningOpen}
+        onClose={() => setWarningOpen(false)}
+        title="Update Future Offers?"
+        actions={
+            <>
+                <Button onClick={() => setWarningOpen(false)}>Cancel</Button>
+                <Button 
+                    onClick={() => handleSetDefault(warningData!.carId, false)} 
+                    variant="outlined"
+                >
+                    No, keep old car
+                </Button>
+                <Button 
+                    onClick={() => handleSetDefault(warningData!.carId, true)} 
+                    variant="contained" 
+                    color="primary"
+                >
+                    Yes, update offers
+                </Button>
+            </>
+        }
+      >
+        <Stack spacing={2}>
+            <Alert severity="info">
+                You have {warningData?.count} upcoming lift offers associated with a different car.
+            </Alert>
+            <Typography>
+                Do you want to update these offers to use your new default car?
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+                Note: If the new car has fewer seats, some passengers may be removed automatically.
+            </Typography>
+        </Stack>
+      </CustomDialog>
     </PageContainer>
   );
 }

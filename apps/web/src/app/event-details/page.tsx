@@ -71,7 +71,7 @@ function EventDetailsContent() {
     } finally {
       setIsLoading(false);
     }
-  }, [eventId]);
+  }, [eventId, displayDate]);
 
   useEffect(() => {
     fetchEventDetails();
@@ -216,6 +216,11 @@ function EventDetailsContent() {
                   <LocationOnIcon color="primary" />
                   <Box>
                     <Typography variant="subtitle2" fontWeight="bold">Location</Typography>
+                    {event.address?.nickname && (
+                        <Typography variant="body2" fontWeight="bold" color="primary.main">
+                            {event.address.nickname}
+                        </Typography>
+                    )}
                     <Typography variant="body2" color="text.secondary">
                       {event.address?.street}, {event.address?.city}
                     </Typography>

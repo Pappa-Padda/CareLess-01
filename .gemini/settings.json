@@ -7,5 +7,24 @@
         "@mui/mcp@latest"
       ]
     }
+  },
+  "context": {
+    "loadMemoryFromIncludeDirectories": false
+  },
+  "tools": {
+    "shell": {
+      "showColor": true
+    }
+  },
+  "ide": {
+    "enabled": true
+  },
+  "experimental": {
+    "introspectionAgentSettings": {
+      "enabled": true
+    }
+  },
+  "general": {
+    "enablePromptCompletion": false
   }
 }

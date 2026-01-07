@@ -11,6 +11,7 @@ export interface Event {
   addressId: number;
   address?: {
     id: number;
+    nickname?: string;
     street: string;
     city: string;
     province: string;
@@ -36,6 +37,7 @@ export interface CreateEventDTO {
   isRecurring?: boolean;
   groupId: number;
   address: {
+    nickname?: string;
     street: string;
     city: string;
     province: string;

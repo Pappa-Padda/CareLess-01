@@ -74,12 +74,13 @@ export default function CarFormDialog({
     try {
       setIsSubmitting(true);
       if (initialData) {
-        await onSubmit({ ...formData, id: initialData.id } as any);
+        const updateData: UpdateCarDTO = { ...formData, id: initialData.id };
+        await onSubmit(updateData);
       } else {
         await onSubmit(formData);
       }
       onClose();
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Form submission error:', err);
     } finally {
       setIsSubmitting(false);

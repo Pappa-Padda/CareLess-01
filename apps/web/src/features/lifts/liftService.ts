@@ -26,6 +26,7 @@ export interface EventDetails {
   endTime: string;
   isRecurring: boolean;
   address: {
+    nickname?: string;
     street: string;
     city: string;
     province: string;
@@ -46,6 +47,7 @@ export interface DriverDetails {
 }
 
 export interface CarDetails {
+  id: number;
   make: string;
   model: string;
   year: number;
@@ -57,6 +59,7 @@ export interface PickupDetails {
   id: number;
   time: string;
   address: {
+    nickname?: string;
     street: string;
     city: string;
     province: string;
@@ -105,6 +108,13 @@ export interface DriverDashboardOffer {
     isConfirmed: boolean;
     pickup: PickupDetails;
   }[];
+}
+
+export interface CarUpdateResult {
+  code?: string;
+  error?: string;
+  currentPassengers?: number;
+  newCapacity?: number;
 }
 
 
@@ -209,5 +219,22 @@ export const liftService = {
       body: JSON.stringify({ liftOfferId }),
     });
     if (!res.ok) throw new Error('Failed to decline allocation');
+  },
+
+  updateLiftOfferCar: async (offerId: number, carId: number, force: boolean = false): Promise<CarUpdateResult> => {
+    const res = await fetch(`${API_URL}/lift-offers/${offerId}/car`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ carId, force }),
+    });
+
+    if (res.status === 409) {
+        // Return the warning data
+        return res.json();
+    }
+
+    if (!res.ok) throw new Error('Failed to update car');
+    return res.json();
   },
 };

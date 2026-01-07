@@ -1,6 +1,6 @@
 import express from 'express';
 import { requireAuth } from '../middleware/auth';
-import { getCars, createCar, updateCar, deleteCar } from '../controllers/carController';
+import { getCars, createCar, updateCar, deleteCar, setDefaultCar } from '../controllers/carController';
 
 const router = express.Router();
 
@@ -9,6 +9,7 @@ router.use(requireAuth); // All car routes require authentication
 router.get('/', getCars);
 router.post('/', createCar);
 router.put('/:id', updateCar);
+router.put('/:id/default', setDefaultCar);
 router.delete('/:id', deleteCar);
 
 export default router;

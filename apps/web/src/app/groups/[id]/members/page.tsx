@@ -6,13 +6,10 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Avatar from '@mui/material/Avatar';
 import Chip from '@mui/material/Chip';
-import Button from '@mui/material/Button';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import PersonIcon from '@mui/icons-material/Person';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import EmojiTransportationIcon from '@mui/icons-material/EmojiTransportation';
-import PhoneIcon from '@mui/icons-material/Phone';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 
@@ -47,9 +44,9 @@ export default function GroupMembersPage({ params }: GroupMembersPageProps) {
       try {
         const data = await groupService.getGroupMembers(groupId);
         setMembers(data.members);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error(err);
-        setError(err.message || 'Failed to load members');
+        setError(err instanceof Error ? err.message : 'Failed to load members');
       } finally {
         setLoading(false);
       }
