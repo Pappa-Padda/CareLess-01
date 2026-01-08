@@ -227,3 +227,15 @@ enum RequestStatus {
   ASSIGNED
   CANCELLED
 }
+
+model ApiUsage {
+  id           Int      @id @default(autoincrement()) @map("Api_Usage_ID")
+  apiName      String   @map("Api_Name")
+  date         DateTime @map("Date") @db.Date
+  count        Int      @default(0) @map("Count")
+  maxFreeCount Int      @map("Max_Free_Count")
+  rate         Decimal  @map("Rate") @db.Decimal(10, 4)
+
+  @@unique([apiName, date])
+  @@map("Api_Usage")
+}

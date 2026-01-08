@@ -30,6 +30,12 @@ interface AddressFormProps {
   required?: boolean;
 }
 
+interface GmpSelectEvent extends Event {
+    placePrediction: {
+        toPlace: () => google.maps.places.Place;
+    };
+}
+
 // Helper component for Place Autocomplete on the street field
 const PlaceAutocompleteInput = ({ 
     value, 
@@ -78,15 +84,18 @@ const PlaceAutocompleteInput = ({
         containerRef.current.appendChild(style);
 
         // Listen for the modern selection event
-        const listener = (event: { placePrediction: { toPlace: () => google.maps.places.Place } }) => {
-            const place = event.placePrediction.toPlace();
-            onPlaceSelect(place);
+        const listener = (event: Event) => {
+            const gmpEvent = event as GmpSelectEvent;
+            if (gmpEvent.placePrediction) {
+                const place = gmpEvent.placePrediction.toPlace();
+                onPlaceSelect(place);
+            }
         };
 
-        autocompleteElement.addEventListener('gmp-select', listener as any as EventListener);
+        autocompleteElement.addEventListener('gmp-select', listener);
 
         return () => {
-            autocompleteElement.removeEventListener('gmp-select', listener as any as EventListener);
+            autocompleteElement.removeEventListener('gmp-select', listener);
         };
     }, [placesLib, onPlaceSelect]);
 

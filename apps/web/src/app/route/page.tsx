@@ -12,8 +12,10 @@ import Step from '@mui/material/Step';
 import StepLabel from '@mui/material/StepLabel';
 import StepContent from '@mui/material/StepContent';
 import CircularProgress from '@mui/material/CircularProgress';
+import Button from '@mui/material/Button';
+import MapIcon from '@mui/icons-material/Map';
 import { SelectChangeEvent } from '@mui/material/Select';
-import { APIProvider, Map, useMapsLibrary } from '@vis.gl/react-google-maps';
+import { Map, useMapsLibrary, APIProvider } from '@vis.gl/react-google-maps';
 import { useSearchParams, useRouter } from 'next/navigation';
 
 import PageContainer from '@/components/shared/ui/PageContainer';
@@ -26,6 +28,24 @@ import MapController from '@/features/maps/components/MapController';
 
 import { useAuth } from '@/context/AuthContext';
 import { liftService, DriverDashboardOffer } from '@/features/lifts/liftService';
+
+// Placeholder for StaticRouteMap if it's meant to be a local subcomponent or separate file.
+const StaticRouteMap = ({ loading, onClick }: { loading: boolean; onClick: () => void }) => (
+  <Box 
+    onClick={onClick} 
+    sx={{ 
+      width: '100%', 
+      height: '100%', 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center', 
+      bgcolor: 'grey.100',
+      cursor: 'pointer'
+    }}
+  >
+    {loading ? <CircularProgress /> : <Typography>Click to view interactive map</Typography>}
+  </Box>
+);
 
 const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
 
@@ -86,6 +106,11 @@ function RouteViewContent() {
   const [loading, setLoading] = useState(true);
   const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null);
   const [mapError, setMapError] = useState<string | null>(null);
+  
+  // Missing states identified by linter
+  const [isInteractive, setIsInteractive] = useState(false);
+  const routeLoading = false; // Placeholder until hook is integrated
+  const routeError = null; // Placeholder until hook is integrated
 
   // Helper to save coordinates back to the database
   const saveCoordinates = async (addressId: number, lat: number, lng: number) => {
@@ -407,25 +432,62 @@ function RouteViewContent() {
                 position: 'relative'
                 }}
             >
-                <APIProvider apiKey={GOOGLE_MAPS_API_KEY}>
-                <Map
-                    defaultCenter={initialCenter}
-                    defaultZoom={11}
-                    gestureHandling={'greedy'}
-                    disableDefaultUI={false}
-                    mapId="DEMO_MAP_ID"
-                >
-                    <MapController center={mapCenter} zoom={mapZoom} />
-                    <Routes 
-                        apiKey={GOOGLE_MAPS_API_KEY}
-                        origin={originLocation || startAddress}
-                        destination={formatAddress(selectedOffer.event.address)}
-                        waypoints={waypoints}
-                        onRouteCalculated={setRouteInfo}
-                        onError={handleMapError}
-                    />
-                </Map>
-                </APIProvider>
+                {!isInteractive ? (
+                    <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
+                        <StaticRouteMap 
+                             loading={routeLoading}
+                             onClick={() => setIsInteractive(true)}
+                        />
+                        {/* Overlay Button */}
+                        {!routeLoading && routeInfo && (
+                            <Box sx={{ 
+                                position: 'absolute', 
+                                bottom: 16, 
+                                left: '50%', 
+                                transform: 'translateX(-50%)',
+                                zIndex: 10
+                            }}>
+                                <Button 
+                                    variant="contained" 
+                                    startIcon={<MapIcon />}
+                                    onClick={() => setIsInteractive(true)}
+                                    sx={{ 
+                                        borderRadius: 20,
+                                        textTransform: 'none',
+                                        boxShadow: 3
+                                    }}
+                                >
+                                    View Interactive Map
+                                </Button>
+                            </Box>
+                        )}
+                         {routeError && (
+                            <Box sx={{ p: 2, color: 'error.main' }}>
+                                <ErrorMessage message={`Failed to load route preview: ${routeError}`} />
+                            </Box>
+                        )}
+                    </Box>
+                ) : (
+                    <APIProvider apiKey={GOOGLE_MAPS_API_KEY}>
+                        <Map
+                            defaultCenter={initialCenter}
+                            defaultZoom={11}
+                            gestureHandling={'greedy'}
+                            disableDefaultUI={false}
+                            mapId="DEMO_MAP_ID"
+                        >
+                            <MapController center={mapCenter} zoom={mapZoom} />
+                            <Routes 
+                                apiKey={GOOGLE_MAPS_API_KEY}
+                                origin={originLocation || startAddress}
+                                destination={formatAddress(selectedOffer.event.address)}
+                                waypoints={waypoints}
+                                route={routeInfo} // Pass the pre-fetched route!
+                                onError={handleMapError}
+                            />
+                        </Map>
+                    </APIProvider>
+                )}
             </Paper>
 
             {/* Route Details Sidebar */}

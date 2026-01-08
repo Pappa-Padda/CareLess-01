@@ -16,6 +16,7 @@ export interface Column<T> {
   align?: 'right' | 'left' | 'center';
   width?: number | string;
   sortable?: boolean;
+  format?: (value: unknown) => React.ReactNode;
 }
 
 interface CustomTableProps<T> {

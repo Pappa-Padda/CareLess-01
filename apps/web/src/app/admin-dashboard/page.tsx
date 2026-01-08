@@ -16,6 +16,7 @@ import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import HailIcon from '@mui/icons-material/Hail';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
 
 import PageContainer from '@/components/shared/ui/PageContainer';
 import PageHeading from '@/components/shared/ui/PageHeading';
@@ -124,25 +125,24 @@ export default function AdminDashboardPage() {
             <ActionCard 
                 title="Allocation Console"
                 description="Assign passengers to vehicles for upcoming events."
-                href="/allocation"
+                href="/admin-dashboard/allocation"
                 icon={<DirectionsCarIcon />}
             />
         </Grid>
         <Grid size={{ xs: 12, md: 4 }}>
             <ActionCard 
-                title="Event Management"
-                description="Create and manage groups and their events."
-                href="/groups" // Linking to groups as events are managed there currently
-                icon={<EventIcon />}
+                title="Pickup Point Management"
+                description="Create and manage pickup locations."
+                href="/pickup-points" 
+                icon={<LocationOnIcon />}
             />
         </Grid>
         <Grid size={{ xs: 12, md: 4 }}>
             <ActionCard 
                 title="User Management"
-                description="View system users (Future Feature)."
-                href="#"
+                description="View and manage system users."
+                href="/admin-dashboard/users"
                 icon={<PeopleIcon />}
-                disabled
             />
         </Grid>
       </Grid>
