@@ -300,3 +300,21 @@ Deploy `apps/web` to a static/Node host (e.g., Vercel, Netlify).
 - `npm run build`: Builds all workspaces. Includes a fallback to support both local `.env` files and production CI/CD.
 - `npm run lint`: Runs linting across all workspaces.
 - `postinstall`: Automatically generates the Prisma client after install. Safe for both local and production.
+
+## 🤖 Specialized Agents
+
+This project utilizes a set of specialized AI agents located in the `.gemini/agents` directory. These agents are designed to handle specific tasks and ensure adherence to project standards.
+
+| Agent | File Path | Purpose |
+| :--- | :--- | :--- |
+| **Build Validator** | `.gemini/agents/build-validator.md` | Ensures the codebase builds, lints, and passes static analysis. |
+| **Code Architect** | `.gemini/agents/code-architect.md` | Enforces high-level design, structural integrity, and monorepo conventions. |
+| **Code Simplifier** | `.gemini/agents/code-simplifier.md` | Dedicated to refactoring, reducing complexity, and maintaining clean code. |
+| **Maps Billing Validator** | `.gemini/agents/maps-billing-validator.md` | Prevents excessive Google Maps Platform API usage and billing spikes. |
+| **On-Call Guide** | `.gemini/agents/oncall-guide.md` | Diagnoses issues, troubleshoots errors, and checks system health. |
+| **Script Runner** | `.gemini/agents/script-runner.md` | Safely executes standalone utility scripts and database maintenance tasks. |
+| **Verify App** | `.gemini/agents/verify-app.md` | Performs end-to-end verification of critical user flows and features. |
+| **Verify Security** | `.gemini/agents/verify-security.md` | Audits code for vulnerabilities, secret leaks, and security best practices. |
+
+**Usage:**
+When engaging with the Gemini CLI for a specific task, you can refer to these agents to guide the AI's behavior and ensure it follows the established protocols. For example, "Acting as the Build Validator, please check the recent changes."
