@@ -10,7 +10,6 @@ import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import DashboardIcon from '@mui/icons-material/Dashboard';
-import EventIcon from '@mui/icons-material/Event';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import GroupIcon from '@mui/icons-material/Group';
 import PersonIcon from '@mui/icons-material/Person';
@@ -60,10 +59,10 @@ const driverItems: MenuItem[] = [
 const adminItems: MenuItem[] = [
   { kind: 'header', title: 'Admin Management' },
   { kind: 'item', text: 'Admin Dashboard', icon: <DashboardIcon />, href: '/admin-dashboard' },
-  { kind: 'item', text: 'Event Management', icon: <EventIcon />, href: '/admin/events' },
-  { kind: 'item', text: 'Address Management', icon: <LocationOnIcon />, href: '/addresses' },
-  { kind: 'item', text: 'Allocation Console', icon: <SettingsSuggestIcon />, href: '/allocation' },
+  { kind: 'item', text: 'Pickup Points', icon: <LocationOnIcon />, href: '/admin-dashboard/pickup-points' },
+  { kind: 'item', text: 'Allocation Console', icon: <SettingsSuggestIcon />, href: '/admin-dashboard/allocation' },
   { kind: 'item', text: 'Communication Center', icon: <ChatIcon />, href: '/chat' },
+  { kind: 'item', text: 'API Usage', icon: <DashboardIcon />, href: '/admin-dashboard/usage' },
 ];
 
 export default function CarelessSidebar() {

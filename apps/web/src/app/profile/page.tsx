@@ -21,7 +21,6 @@ import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
 import Alert from '@mui/material/Alert';
 
-import { APIProvider } from '@vis.gl/react-google-maps';
 
 import PageContainer from '@/components/shared/ui/PageContainer';
 import PageHeading from '@/components/shared/ui/PageHeading';
@@ -565,8 +564,6 @@ function ProfileContent() {
 
 export default function ProfilePage() {
   return (
-    <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''}>
       <ProfileContent />
-    </APIProvider>
   );
 }

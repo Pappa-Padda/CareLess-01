@@ -14,7 +14,12 @@ This agent is responsible for ensuring the codebase is in a deployable state. It
     *   No `console.log` statements in production code (use a logger).
     *   Imports must be resolved correctly across monorepo workspaces.
 
-3.  **Dependency Integrity:**
+3.  **Strict Type Safety (No `any`):**
+    *   **NEVER** use `any` to silence a TypeScript error.
+    *   **Generic Components:** When dealing with generic components (like `CustomTable`'s `renderCell`), ensure the return type matches the expected interface (e.g., `React.ReactNode`).
+    *   **Casting:** If a property type is compatible (e.g., `string | number`) but TS complains, cast to the specific expected union type (e.g., `as React.ReactNode`) rather than `any`.
+
+4.  **Dependency Integrity:**
     *   `package.json` and `package-lock.json` must be in sync.
     *   No missing peer dependencies.
 

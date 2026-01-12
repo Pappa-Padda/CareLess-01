@@ -30,6 +30,12 @@ interface AddressFormProps {
   required?: boolean;
 }
 
+interface GmpSelectEvent extends Event {
+    placePrediction: {
+        toPlace: () => google.maps.places.Place;
+    };
+}
+
 // Helper component for Place Autocomplete on the street field
 const PlaceAutocompleteInput = ({ 
     value, 
@@ -78,15 +84,18 @@ const PlaceAutocompleteInput = ({
         containerRef.current.appendChild(style);
 
         // Listen for the modern selection event
-        const listener = (event: { placePrediction: { toPlace: () => google.maps.places.Place } }) => {
-            const place = event.placePrediction.toPlace();
-            onPlaceSelect(place);
+        const listener = (event: Event) => {
+            const gmpEvent = event as GmpSelectEvent;
+            if (gmpEvent.placePrediction) {
+                const place = gmpEvent.placePrediction.toPlace();
+                onPlaceSelect(place);
+            }
         };
 
-        autocompleteElement.addEventListener('gmp-select', listener as any as EventListener);
+        autocompleteElement.addEventListener('gmp-select', listener);
 
         return () => {
-            autocompleteElement.removeEventListener('gmp-select', listener as any as EventListener);
+            autocompleteElement.removeEventListener('gmp-select', listener);
         };
     }, [placesLib, onPlaceSelect]);
 
@@ -115,7 +124,7 @@ const MapUpdater = ({ center }: { center: { lat: number, lng: number } | null })
 };
 
 export default function AddressForm({ data, onChange }: AddressFormProps) {
-  const geocodingLib = useMapsLibrary('geocoding');
+  // const geocodingLib = useMapsLibrary('geocoding'); // Removed: using backend proxy now
   const [loading, setLoading] = useState(false);
   const [mapCenter, setMapCenter] = useState<{ lat: number, lng: number } | null>(
       data.latitude && data.longitude ? { lat: Number(data.latitude), lng: Number(data.longitude) } : null
@@ -190,23 +199,38 @@ export default function AddressForm({ data, onChange }: AddressFormProps) {
   }, [data, onChange]);
 
   const handleGeocode = useCallback(async (isManual: boolean = false) => {
-      if (!geocodingLib || !data.street || !data.city) return;
+      // Logic change: We now proxy this request through our backend to track usage.
+      if (!data.street || !data.city) return;
 
       setLoading(true);
       try {
-          const geocoder = new geocodingLib.Geocoder();
           const addressString = [data.street, data.city, data.province, data.postalCode, data.country]
             .filter(Boolean)
             .join(', ');
+
+          const NEXT_PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+          const response = await fetch(`${NEXT_PUBLIC_API_URL}/api/maps/geocode`, {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json',
+                  // Ensure you are passing the auth token if your backend requires it (requireAuth middleware)
+                  // Assuming the auth context or cookie handles this, or if we need to pass headers manually:
+                  'Authorization': `Bearer ${/* Retrieve token here if needed, or rely on cookies */ ''}` 
+              },
+              // If using cookies for auth, ensure credentials are included
+              credentials: 'include',
+              body: JSON.stringify({ address: addressString }),
+          });
           
-          const res = await geocoder.geocode({ address: addressString });
+          if (!response.ok) throw new Error('Geocoding failed');
+          
+          const res = await response.json();
           
           if (res.results && res.results.length > 0) {
               const location = res.results[0].geometry.location;
-              const lat = location.lat();
-              const lng = location.lng();
+              const lat = location.lat; // Note: Backend returns JSON, so .lat is a number, not a function
+              const lng = location.lng;
               
-              // Generate a fallback link based on coordinates if a full Place object wasn't used
               const fallbackLink = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
 
               setMapCenter({ lat, lng });
@@ -225,7 +249,7 @@ export default function AddressForm({ data, onChange }: AddressFormProps) {
       } finally {
           setLoading(false);
       }
-  }, [geocodingLib, data, onChange]);
+  }, [data, onChange]);
 
   // Debounced auto-geocode (only if coordinates are missing)
   useEffect(() => {

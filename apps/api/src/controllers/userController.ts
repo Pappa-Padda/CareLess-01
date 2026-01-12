@@ -257,3 +257,29 @@ export const deleteAddress = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Error deleting address' });
   }
 };
+
+export const deleteUser = async (req: Request, res: Response) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: 'Invalid user ID' });
+
+    // Use transaction to handle manual cascades not covered by schema
+    await prisma.$transaction(async (tx) => {
+        // 1. Delete Lift Offers where user is driver (Schema doesn't cascade this to Driver)
+        // Driver ID shares the same ID as User ID
+        await tx.liftOffer.deleteMany({
+            where: { driverId: id }
+        });
+
+        // 2. Delete the User (Cascades to Driver, Passenger, AddressList, Groups, etc.)
+        await tx.user.delete({
+            where: { id }
+        });
+    });
+
+    res.json({ message: 'User deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    res.status(500).json({ error: 'Failed to delete user' });
+  }
+};

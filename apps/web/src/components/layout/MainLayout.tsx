@@ -5,6 +5,8 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import CarelessSidebar from '../shared/sidebar/CarelessSidebar';
 
+import GoogleMapsProvider from '../shared/GoogleMapsProvider';
+
 const publicRoutes = ['/', '/sign-in', '/sign-up'];
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
@@ -24,12 +26,14 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
   if (user) {
     return (
-      <Box sx={{ display: 'flex' }}>
-        <CarelessSidebar />
-        <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
-          {children}
+      <GoogleMapsProvider>
+        <Box sx={{ display: 'flex' }}>
+          <CarelessSidebar />
+          <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+            {children}
+          </Box>
         </Box>
-      </Box>
+      </GoogleMapsProvider>
     );
   }
 

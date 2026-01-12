@@ -14,9 +14,11 @@
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.3.6",
     "@mui/material": "^7.3.6",
+    "@mui/x-charts": "^8.24.0",
     "@repo/database": "*",
     "@repo/types": "*",
     "@vis.gl/react-google-maps": "^1.5.1",
+    "date-fns": "^4.1.0",
     "next": "16.0.10",
     "react": "19.2.1",
     "react-dom": "19.2.1"

@@ -9,6 +9,10 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "baseUrl": ".",
+    "typeRoots": [
+      "./node_modules/@types",
+      "../../node_modules/@types"
+    ],
     "paths": {
       "@repo/database": ["../../packages/database/src/index.ts"],
       "@repo/types": ["../../packages/types/src/index.ts"]
