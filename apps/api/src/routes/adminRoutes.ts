@@ -5,13 +5,15 @@ import {
   getPickups, 
   createPickup, 
   updatePickup, 
-  deletePickup 
+  deletePickup,
+  getGoogleApiStats
 } from '../controllers/adminController';
 import { getUsers, deleteUser } from '../controllers/userController';
 
 const router = express.Router();
 
 router.get('/stats', requireAuth, requireAdmin, getDashboardStats);
+router.get('/google-stats', requireAuth, requireAdmin, getGoogleApiStats);
 
 // User Management
 router.get('/users', requireAuth, requireAdmin, getUsers);

@@ -25,6 +25,7 @@ import CustomSelect from '@/components/shared/ui/CustomSelect';
 import ErrorMessage from '@/components/shared/ui/ErrorMessage';
 import Routes from '@/features/maps/components/Routes';
 import MapController from '@/features/maps/components/MapController';
+import { RouteInfo } from '@/features/maps/hooks/useRouteCalculation';
 
 import { useAuth } from '@/context/AuthContext';
 import { liftService, DriverDashboardOffer } from '@/features/lifts/liftService';
@@ -65,23 +66,6 @@ interface UserAddress {
   isDefault: boolean;
   latitude?: string;
   longitude?: string;
-}
-
-// Minimal type for what we use from google.maps.DirectionsRoute
-// Note: We use the 'any' from @vis.gl but here we want to cast it specifically for the Legs
-interface Leg {
-  distanceMeters?: number;
-  duration?: string;
-  startLocation?: { latLng: { latitude: number, longitude: number } };
-  endLocation?: { latLng: { latitude: number, longitude: number } };
-}
-
-interface RouteInfo {
-  distanceMeters?: number;
-  duration?: string;
-  legs?: Leg[];
-  optimizedIntermediateWaypointIndex?: number[];
-  polyline?: { encodedPolyline: string };
 }
 
 function RouteViewContent() {

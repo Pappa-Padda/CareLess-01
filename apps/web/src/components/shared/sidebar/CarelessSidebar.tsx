@@ -59,9 +59,10 @@ const driverItems: MenuItem[] = [
 const adminItems: MenuItem[] = [
   { kind: 'header', title: 'Admin Management' },
   { kind: 'item', text: 'Admin Dashboard', icon: <DashboardIcon />, href: '/admin-dashboard' },
-  { kind: 'item', text: 'Pickup Points', icon: <LocationOnIcon />, href: '/pickup-points' },
+  { kind: 'item', text: 'Pickup Points', icon: <LocationOnIcon />, href: '/admin-dashboard/pickup-points' },
   { kind: 'item', text: 'Allocation Console', icon: <SettingsSuggestIcon />, href: '/admin-dashboard/allocation' },
   { kind: 'item', text: 'Communication Center', icon: <ChatIcon />, href: '/chat' },
+  { kind: 'item', text: 'API Usage', icon: <DashboardIcon />, href: '/admin-dashboard/usage' },
 ];
 
 export default function CarelessSidebar() {

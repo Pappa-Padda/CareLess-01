@@ -17,6 +17,7 @@ import PageContainer from '@/components/shared/ui/PageContainer';
 import PageHeading from '@/components/shared/ui/PageHeading';
 import CustomTable, { Column } from '@/components/shared/ui/CustomTable';
 import CustomDialog from '@/components/shared/ui/CustomDialog';
+import BackButton from '@/components/shared/ui/BackButton';
 import { adminService, User } from '@/features/admin/adminService';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -132,11 +133,7 @@ export default function AdminUsersPage() {
   return (
     <PageContainer>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 4 }}>
-        <Tooltip title="Back to Dashboard">
-             <IconButton onClick={() => router.push('/admin-dashboard')} color="default" size="medium" sx={{ ml: -1 }}>
-                <ArrowBackIcon />
-             </IconButton>
-        </Tooltip>
+        <BackButton href="/admin-dashboard" tooltip="Back to Dashboard" />
         <PageHeading>User Management</PageHeading>
       </Box>
 

@@ -1,21 +1,27 @@
 import { Request, Response } from 'express';
 import { prisma } from '@repo/database';
+import { getGoogleApiMetrics } from '../services/googleMonitoringService';
+
+const GOOGLE_CLOUD_PROJECT_ID = process.env.GOOGLE_CLOUD_PROJECT_ID;
 
 export const getDashboardStats = async (req: Request, res: Response) => {
   try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     const [userCount, upcomingEventCount, activeLiftOffers, pendingLiftRequests] = await Promise.all([
       prisma.user.count(),
       prisma.event.count({
         where: {
           date: {
-            gte: new Date(),
+            gte: today,
           },
         },
       }),
       prisma.liftOffer.count({
         where: {
           date: {
-            gte: new Date(),
+            gte: today,
           },
         },
       }),
@@ -32,9 +38,23 @@ export const getDashboardStats = async (req: Request, res: Response) => {
       activeLiftOffers,
       pendingLiftRequests,
     });
+  } catch (error: any) {
+    console.error('Error fetching admin dashboard stats:', error.message || error);
+    res.status(500).json({ error: 'Error fetching dashboard stats', details: error.message });
+  }
+};
+
+export const getGoogleApiStats = async (req: Request, res: Response) => {
+  if (!GOOGLE_CLOUD_PROJECT_ID) {
+    console.error('Missing GOOGLE_CLOUD_PROJECT_ID');
+    return res.status(500).json({ error: 'Server configuration error: Missing Project ID' });
+  }
+
+  try {
+    const stats = await getGoogleApiMetrics(GOOGLE_CLOUD_PROJECT_ID);
+    res.json(stats);
   } catch (error) {
-    console.error('Error fetching admin dashboard stats:', error);
-    res.status(500).json({ error: 'Error fetching dashboard stats' });
+    res.status(500).json({ error: 'Failed to fetch Google API metrics' });
   }
 };
 

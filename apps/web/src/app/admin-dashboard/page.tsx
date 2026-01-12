@@ -17,6 +17,7 @@ import HailIcon from '@mui/icons-material/Hail';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
+import BarChartIcon from '@mui/icons-material/BarChart';
 
 import PageContainer from '@/components/shared/ui/PageContainer';
 import PageHeading from '@/components/shared/ui/PageHeading';
@@ -143,6 +144,14 @@ export default function AdminDashboardPage() {
                 description="View and manage system users."
                 href="/admin-dashboard/users"
                 icon={<PeopleIcon />}
+            />
+        </Grid>
+        <Grid size={{ xs: 12, md: 4 }}>
+            <ActionCard 
+                title="API Usage"
+                description="Monitor Google Maps API consumption and limits."
+                href="/admin-dashboard/usage"
+                icon={<BarChartIcon />}
             />
         </Grid>
       </Grid>

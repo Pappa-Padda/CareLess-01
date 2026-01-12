@@ -133,19 +133,20 @@ export default function Routes({
                 body.optimizeWaypointOrder = requestPayload.optimizeWaypointOrder;
             }
 
-            const response = await fetch('https://routes.googleapis.com/directions/v2:computeRoutes', {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+
+            const response = await fetch(`${apiUrl}/maps/routes`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-Goog-Api-Key': apiKey,
-                    'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline,routes.legs,routes.optimizedIntermediateWaypointIndex'
                 },
+                credentials: 'include',
                 body: JSON.stringify(body)
             });
 
             if (!response.ok) {
                 const errData = await response.json();
-                throw new Error(errData.error?.message || `Routes API failed: ${response.status}`);
+                throw new Error(errData.error || `Routes API failed: ${response.status}`);
             }
 
             const data = await response.json();

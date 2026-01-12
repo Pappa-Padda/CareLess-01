@@ -45,6 +45,15 @@ export interface PickupFormData extends Omit<Address, 'id'> {
   time: Date | string;
 }
 
+export interface ApiUsage {
+  id: number;
+  apiName: string;
+  date: string;
+  count: number;
+  maxFreeCount: number;
+  rate: string;
+}
+
 export const adminService = {
   getDashboardStats: async (): Promise<DashboardStats> => {
     const res = await fetch(`${API_URL}/admin/stats`, {
@@ -57,6 +66,15 @@ export const adminService = {
         throw new Error('Failed to fetch admin stats');
     }
     
+    return res.json();
+  },
+
+  getApiUsage: async (): Promise<ApiUsage[]> => {
+    const res = await fetch(`${API_URL}/admin/usage`, {
+        method: 'GET',
+        credentials: 'include',
+    });
+    if (!res.ok) throw new Error('Failed to fetch API usage');
     return res.json();
   },
 

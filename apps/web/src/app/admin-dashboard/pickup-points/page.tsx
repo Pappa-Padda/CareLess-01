@@ -230,7 +230,7 @@ export default function PickupPointsPage() {
     if (column.format) {
       return column.format(item[column.id as keyof Pickup]);
     }
-    return item[column.id as keyof Pickup];
+    return item[column.id as keyof Pickup] as React.ReactNode;
   };
 
   if (authLoading || (loading && !pickups.length && !error)) {

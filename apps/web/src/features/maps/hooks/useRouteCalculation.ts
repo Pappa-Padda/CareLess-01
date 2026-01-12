@@ -42,8 +42,7 @@ export function useRouteCalculation({
   origin,
   destination,
   waypoints = [],
-  apiKey
-}: UseRouteCalculationProps) {
+}: Omit<UseRouteCalculationProps, 'apiKey'> & { apiKey?: string }) {
   const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -66,36 +65,27 @@ export function useRouteCalculation({
   const requestKey = JSON.stringify(requestPayload);
 
   const fetchRoute = useCallback(async () => {
-    if (!requestPayload || !apiKey) return;
+    if (!requestPayload) return;
 
     const currentFetchId = ++fetchIdRef.current;
     setLoading(true);
     setError(null);
 
     try {
-        const body = {
-            origin: requestPayload.origin,
-            destination: requestPayload.destination,
-            travelMode: 'DRIVE',
-            routingPreference: 'TRAFFIC_AWARE',
-            computeAlternativeRoutes: false,
-            intermediates: requestPayload.intermediates.length > 0 ? requestPayload.intermediates : undefined,
-            optimizeWaypointOrder: requestPayload.intermediates.length > 0 ? requestPayload.optimizeWaypointOrder : undefined
-        };
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
-        const response = await fetch('https://routes.googleapis.com/directions/v2:computeRoutes', {
+        const response = await fetch(`${apiUrl}/maps/routes`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-Goog-Api-Key': apiKey,
-                'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline,routes.legs,routes.optimizedIntermediateWaypointIndex'
             },
-            body: JSON.stringify(body)
+            credentials: 'include',
+            body: JSON.stringify(requestPayload)
         });
 
         if (!response.ok) {
             const errData = await response.json();
-            throw new Error(errData.error?.message || `Routes API failed: ${response.status}`);
+            throw new Error(errData.error || `Routes API failed: ${response.status}`);
         }
 
         const data = await response.json();
@@ -117,7 +107,7 @@ export function useRouteCalculation({
             setLoading(false);
         }
     }
-  }, [apiKey, requestPayload]); // Depend on stable payload
+  }, [requestPayload]); // Depend on stable payload
 
   // Trigger fetch when dependencies change
   // Note: We might want to make this manual for the static view optimization, 
@@ -130,7 +120,7 @@ export function useRouteCalculation({
     if (requestPayload) {
         fetchRoute();
     }
-  }, [requestKey, fetchRoute]); // requestKey ensures deep comparison check
+  }, [requestKey, fetchRoute, requestPayload]); // requestKey ensures deep comparison check
 
   return { routeInfo, loading, error, refetch: fetchRoute };
 }
