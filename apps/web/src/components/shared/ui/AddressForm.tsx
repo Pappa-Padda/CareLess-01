@@ -46,6 +46,12 @@ const PlaceAutocompleteInput = ({
 }) => {
     const containerRef = React.useRef<HTMLDivElement>(null);
     const placesLib = useMapsLibrary('places');
+    const onPlaceSelectRef = React.useRef(onPlaceSelect);
+
+    // Update the ref whenever the handler changes
+    useEffect(() => {
+        onPlaceSelectRef.current = onPlaceSelect;
+    }, [onPlaceSelect]);
 
     useEffect(() => {
         if (!placesLib || !containerRef.current) return;
@@ -88,7 +94,7 @@ const PlaceAutocompleteInput = ({
             const gmpEvent = event as GmpSelectEvent;
             if (gmpEvent.placePrediction) {
                 const place = gmpEvent.placePrediction.toPlace();
-                onPlaceSelect(place);
+                onPlaceSelectRef.current(place);
             }
         };
 
@@ -97,7 +103,7 @@ const PlaceAutocompleteInput = ({
         return () => {
             autocompleteElement.removeEventListener('gmp-select', listener);
         };
-    }, [placesLib, onPlaceSelect]);
+    }, [placesLib]); // Dependency onPlaceSelect removed to prevent re-mounting
 
     return (
         <Box className="map-autocomplete-container">

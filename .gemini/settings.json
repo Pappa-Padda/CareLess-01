@@ -26,5 +26,8 @@
   },
   "general": {
     "enablePromptCompletion": false
+  },
+  "ui": {
+    "showMemoryUsage": true
   }
 }

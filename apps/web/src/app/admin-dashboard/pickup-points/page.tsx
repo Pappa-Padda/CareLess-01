@@ -12,6 +12,7 @@ import IconButton from '@mui/material/IconButton';
 import Alert from '@mui/material/Alert';
 import Tooltip from '@mui/material/Tooltip';
 import DialogContentText from '@mui/material/DialogContentText';
+import Typography from '@mui/material/Typography';
 
 import PageContainer from '@/components/shared/ui/PageContainer';
 import PageHeading from '@/components/shared/ui/PageHeading';
@@ -127,7 +128,7 @@ export default function PickupPointsPage() {
   };
 
   const handleFormChange = (newData: Omit<PickupFormData, 'time'>) => {
-    setFormData(newData);
+    setFormData(prev => ({ ...prev, ...newData }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -199,17 +200,27 @@ export default function PickupPointsPage() {
     { 
       id: 'address', 
       label: 'Location', 
-      width: '65%',
-      format: (value) => {
-        const addr = value as Pickup['address'];
-        return addr.nickname || `${addr.street}, ${addr.city}`;
-      }
+      width: '75%',
     },
-    { id: 'passengerCount', label: 'Seats', width: '10%' },
     { id: 'actions', label: 'Actions', align: 'right', width: '10%' },
   ];
 
   const renderCell = (item: Pickup, column: Column<Pickup>) => {
+    if (column.id === 'address') {
+      const addr = item.address;
+      return (
+        <Box>
+          <Typography variant="body2" fontWeight="bold">
+            {addr.nickname || addr.city}
+          </Typography>
+          {addr.nickname && (
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+              {addr.street}
+            </Typography>
+          )}
+        </Box>
+      );
+    }
     if (column.id === 'actions') {
       return (
         <Stack direction="row" spacing={1} justifyContent="flex-end">

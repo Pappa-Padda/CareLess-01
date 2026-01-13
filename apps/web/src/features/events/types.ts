@@ -26,6 +26,8 @@ export interface Event {
     name: string;
     profilePicture?: string;
   };
+  requestCount?: number;
+  totalSeats?: number;
 }
 
 export interface CreateEventDTO {

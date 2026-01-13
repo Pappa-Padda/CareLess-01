@@ -13,6 +13,7 @@ import NextLink from 'next/link';
 import { useRouter } from 'next/navigation';
 import AuthLayout from '../AuthLayout';
 import { useAuth } from '@/context/AuthContext';
+import { isValidPhoneNumber } from 'libphonenumber-js';
 
 export default function SignUp() {
   const router = useRouter();
@@ -62,9 +63,9 @@ export default function SignUp() {
       setNameErrorMessage('');
     }
 
-    if (!phoneNumber.value || phoneNumber.value.length < 1) {
+    if (!phoneNumber.value || !isValidPhoneNumber(phoneNumber.value)) {
       setPhoneNumberError(true);
-      setPhoneNumberErrorMessage('Phone number is required.');
+      setPhoneNumberErrorMessage('Please enter a valid phone number.');
       isValid = false;
     } else {
       setPhoneNumberError(false);

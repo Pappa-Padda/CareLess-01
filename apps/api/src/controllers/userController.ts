@@ -32,10 +32,10 @@ export const createUser = async (req: Request, res: Response) => {
 export const updateProfile = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.userId;
-    const { name, phoneNumber } = req.body;
+    const { name, phoneNumber, email } = req.body;
     const profilePicture = req.file ? `/uploads/${req.file.filename}` : undefined;
 
-    const dataToUpdate: any = { name, phoneNumber };
+    const dataToUpdate: any = { name, phoneNumber, email };
     if (profilePicture) {
       dataToUpdate.profilePicture = profilePicture;
     }

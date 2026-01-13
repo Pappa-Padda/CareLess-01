@@ -4,6 +4,8 @@ import { prisma } from '@repo/database';
 export const getEvents = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.userId;
+    const filter = (req.query.filter as string) || 'upcoming'; // 'upcoming' | 'past'
+
     if (!userId) return res.status(401).json({ error: 'Not authenticated' });
 
     const baseEvents = await prisma.event.findMany({
@@ -19,6 +21,8 @@ export const getEvents = async (req: Request, res: Response) => {
       include: {
         address: true,
         group: true,
+        liftRequests: true, // Include requests
+        liftOffers: true,   // Include offers
       },
       orderBy: {
         date: 'asc',
@@ -26,40 +30,114 @@ export const getEvents = async (req: Request, res: Response) => {
     });
 
     const now = new Date();
+    // Reset time to start of day for accurate date comparison
     now.setHours(0, 0, 0, 0);
 
     const expandedEvents: any[] = [];
 
+    const getStats = (event: any, date: Date) => {
+        const dateStr = date.toISOString().split('T')[0];
+        
+        const requests = event.liftRequests.filter((r: any) => {
+            const rDate = new Date(r.date).toISOString().split('T')[0];
+            return rDate === dateStr && r.status !== 'CANCELLED';
+        });
+
+        const offers = event.liftOffers.filter((o: any) => {
+            const oDate = new Date(o.date).toISOString().split('T')[0];
+            return oDate === dateStr;
+        });
+
+        const totalSeats = offers.reduce((sum: number, o: any) => sum + o.availableSeats, 0);
+
+        return { requestCount: requests.length, totalSeats };
+    };
+
     baseEvents.forEach((event) => {
       if (event.isRecurring) {
-        // Generate next 20 occurrences
-        for (let i = 0; i < 20; i++) {
-          const occDate = new Date(event.date);
-          occDate.setDate(occDate.getDate() + (i * 7));
-          
-          // Only include if it's today or in the future
-          if (occDate >= now) {
-            expandedEvents.push({
-              ...event,
-              id: `${event.id}_${occDate.toISOString().split('T')[0]}`, // Virtual ID
-              realId: event.id,
-              date: occDate,
-              // Adjust startTime and endTime to the new date
-              startTime: combineDateAndTime(occDate, event.startTime),
-              endTime: combineDateAndTime(occDate, event.endTime),
-            });
-          }
+        if (filter === 'upcoming') {
+            // Generate next 20 occurrences
+            for (let i = 0; i < 20; i++) {
+              const occDate = new Date(event.date);
+              occDate.setDate(occDate.getDate() + (i * 7));
+              
+              // Only include if it's today or in the future
+              if (occDate >= now) {
+                const stats = getStats(event, occDate);
+                expandedEvents.push({
+                  ...event,
+                  id: `${event.id}_${occDate.toISOString().split('T')[0]}`, // Virtual ID
+                  realId: event.id,
+                  date: occDate,
+                  startTime: combineDateAndTime(occDate, event.startTime),
+                  endTime: combineDateAndTime(occDate, event.endTime),
+                  requestCount: stats.requestCount,
+                  totalSeats: stats.totalSeats,
+                });
+              }
+            }
+        } else {
+            // PAST EVENTS logic ...
+            const diffTime = Math.abs(now.getTime() - event.date.getTime());
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+            const weeksPassed = Math.floor(diffDays / 7);
+
+            const limit = 10;
+            const startIdx = Math.max(0, weeksPassed - limit);
+            
+            for (let i = startIdx; i < weeksPassed; i++) {
+                const occDate = new Date(event.date);
+                occDate.setDate(occDate.getDate() + (i * 7));
+                
+                if (occDate < now) {
+                    const stats = getStats(event, occDate);
+                    expandedEvents.push({
+                      ...event,
+                      id: `${event.id}_${occDate.toISOString().split('T')[0]}`,
+                      realId: event.id,
+                      date: occDate,
+                      startTime: combineDateAndTime(occDate, event.startTime),
+                      endTime: combineDateAndTime(occDate, event.endTime),
+                      requestCount: stats.requestCount,
+                      totalSeats: stats.totalSeats,
+                    });
+                }
+            }
         }
-      } else if (new Date(event.date) >= now) {
-        expandedEvents.push({
-          ...event,
-          realId: event.id,
-        });
+      } else {
+        // Non-recurring
+        const eventDate = new Date(event.date);
+        const stats = getStats(event, eventDate);
+        
+        if (filter === 'upcoming') {
+            if (eventDate >= now) {
+                expandedEvents.push({
+                  ...event,
+                  realId: event.id,
+                  requestCount: stats.requestCount,
+                  totalSeats: stats.totalSeats,
+                });
+            }
+        } else {
+            if (eventDate < now) {
+                expandedEvents.push({
+                  ...event,
+                  realId: event.id,
+                  requestCount: stats.requestCount,
+                  totalSeats: stats.totalSeats,
+                });
+            }
+        }
       }
     });
 
-    // Sort all expanded events by date
-    expandedEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    // Sort expanded events
+    if (filter === 'upcoming') {
+        expandedEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    } else {
+        // Past events: Show most recent first (descending)
+        expandedEvents.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    }
 
     res.json(expandedEvents);
   } catch (error) {

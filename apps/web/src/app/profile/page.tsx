@@ -31,6 +31,7 @@ import SubmitButton from '@/components/shared/ui/SubmitButton';
 import CancelButton from '@/components/shared/ui/CancelButton';
 import AddressForm, { AddressFormData } from '@/components/shared/ui/AddressForm';
 import { useAuth } from '@/context/AuthContext';
+import { isValidPhoneNumber } from 'libphonenumber-js';
 
 interface Address {
   id: number;
@@ -63,7 +64,9 @@ function ProfileContent() {
   const [profileData, setProfileData] = useState({
     name: '',
     phoneNumber: '',
+    email: '',
   });
+  const [phoneError, setPhoneError] = useState(false);
   const [profileImage, setProfileImage] = useState<File | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
@@ -100,6 +103,7 @@ function ProfileContent() {
       setProfileData({
         name: user.name || '',
         phoneNumber: user.phoneNumber || '',
+        email: user.email || '',
       });
       fetchAddresses();
     }
@@ -150,10 +154,18 @@ function ProfileContent() {
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsProfileSubmitting(true);
+
+    if (!isValidPhoneNumber(profileData.phoneNumber)) {
+        setPhoneError(true);
+        setIsProfileSubmitting(false);
+        return;
+    }
+
     try {
       const formData = new FormData();
       formData.append('name', profileData.name);
       formData.append('phoneNumber', profileData.phoneNumber);
+      formData.append('email', profileData.email);
       if (profileImage) {
         formData.append('profilePicture', profileImage);
       }
@@ -438,8 +450,13 @@ function ProfileContent() {
           setIsProfileDialogOpen(false);
           setProfileImage(null);
           setPreviewImage(null);
+          setPhoneError(false); // Reset phone error
           if (user) {
-            setProfileData({ name: user.name, phoneNumber: user.phoneNumber || '' });
+            setProfileData({ 
+              name: user.name, 
+              phoneNumber: user.phoneNumber || '',
+              email: user.email || ''
+            });
           }
         }}
         title="Edit Personal Details"
@@ -495,11 +512,24 @@ function ProfileContent() {
           required
         />
         <CustomTextField
+          id="email"
+          label="Email Address"
+          type="email"
+          value={profileData.email}
+          onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
+          required
+        />
+        <CustomTextField
           id="phone"
           label="Phone Number"
           value={profileData.phoneNumber}
-          onChange={(e) => setProfileData({ ...profileData, phoneNumber: e.target.value })}
+          onChange={(e) => {
+              setProfileData({ ...profileData, phoneNumber: e.target.value });
+              if (phoneError) setPhoneError(false);
+          }}
           required
+          error={phoneError}
+          helperText={phoneError ? "Invalid phone number" : undefined}
         />
       </CustomDialog>
 

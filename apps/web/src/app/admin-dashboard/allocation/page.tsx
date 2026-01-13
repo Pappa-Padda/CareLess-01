@@ -320,12 +320,27 @@ export default function AllocationConsolePage() {
                         </Stack>
                         <Divider sx={{ mb: 2 }} />
                         <Stack spacing={1.5}>
-                            {unassigned.length === 0 ? (
-                                <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
-                                    All passengers assigned!
-                                </Typography>
-                            ) : (
-                                unassigned.map(p => (
+                            {(() => {
+                                const totalAssigned = offers.reduce((sum, o) => sum + o.passengers.length, 0);
+                                const totalPassengers = unassigned.length + totalAssigned;
+
+                                if (totalPassengers === 0) {
+                                    return (
+                                        <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
+                                            No lift requests for this event.
+                                        </Typography>
+                                    );
+                                }
+
+                                if (unassigned.length === 0) {
+                                    return (
+                                        <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
+                                            All passengers assigned!
+                                        </Typography>
+                                    );
+                                }
+
+                                return unassigned.map(p => (
                                     <Paper key={p.id} sx={{ p: 1.5, borderRadius: 1 }} variant="outlined">
                                         <Stack direction="row" spacing={1.5} alignItems="center">
                                             <Avatar src={getImageUrl(p.profilePicture)} sx={{ width: 32, height: 32 }}>
@@ -351,8 +366,8 @@ export default function AllocationConsolePage() {
                                             </FormControl>
                                         </Stack>
                                     </Paper>
-                                ))
-                            )}
+                                ));
+                            })()}
                         </Stack>
                     </Paper>
                 </Grid>

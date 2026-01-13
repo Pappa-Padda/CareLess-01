@@ -475,55 +475,100 @@ function RouteViewContent() {
             </Paper>
 
             {/* Route Details Sidebar */}
-            <Paper variant="outlined" sx={{ width: '100%', flex: 1, p: 3, minHeight: '600px' }}>
+            <Paper variant="outlined" sx={{ width: '100%', flex: 1, p: 3, minHeight: '600px', display: 'flex', flexDirection: 'column' }}>
                 <Typography variant="h6" fontWeight="bold" gutterBottom>
                     Itinerary
                 </Typography>
                 <Divider sx={{ mb: 2 }} />
                 
-                {mapError ? (
-                    <ErrorMessage message={mapError} />
-                ) : !routeInfo ? (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                        <CircularProgress size={24} />
-                    </Box>
-                ) : (
-                    <Box>
-                        <Box sx={{ mb: 3, bgcolor: 'primary.light', p: 2, borderRadius: 1, color: 'primary.contrastText' }}>
-                            <Typography variant="subtitle2" fontWeight="bold">Total Trip</Typography>
-                            <Stack direction="row" justifyContent="space-between">
-                                <Typography variant="body2">Distance: {Math.round(((routeInfo as RouteInfo).distanceMeters || 0) / 1000)} km</Typography>
-                                <Typography variant="body2">
-                                    Duration: ~{Math.round(parseInt((routeInfo as RouteInfo).duration?.replace('s','') || '0') / 60)} mins
-                                </Typography>
-                            </Stack>
+                <Box sx={{ flexGrow: 1 }}>
+                    {mapError ? (
+                        <ErrorMessage message={mapError} />
+                    ) : !routeInfo ? (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 8, gap: 2 }}>
+                            <CircularProgress size={32} />
+                            <Typography variant="body2" color="text.secondary">
+                                Calculating preview...
+                            </Typography>
                         </Box>
+                    ) : (
+                        <Box>
+                            <Box sx={{ mb: 3, bgcolor: 'primary.light', p: 2, borderRadius: 1, color: 'primary.contrastText' }}>
+                                <Typography variant="subtitle2" fontWeight="bold">Total Trip</Typography>
+                                <Stack direction="row" justifyContent="space-between">
+                                    <Typography variant="body2">Distance: {Math.round(((routeInfo as RouteInfo).distanceMeters || 0) / 1000)} km</Typography>
+                                    <Typography variant="body2">
+                                        Duration: ~{Math.round(parseInt((routeInfo as RouteInfo).duration?.replace('s','') || '0') / 60)} mins
+                                    </Typography>
+                                </Stack>
+                            </Box>
 
-                        <Stepper orientation="vertical" activeStep={-1}>
-                            {steps.map((step, index) => (
-                                <Step key={index} expanded>
-                                    <StepLabel 
-                                        onClick={() => handleStepClick(step)}
-                                        sx={{ 
-                                            cursor: 'pointer', 
-                                            '&:hover': { bgcolor: 'action.hover', borderRadius: 1 } 
-                                        }}
-                                    >
-                                        <Typography fontWeight="bold">{step.label}</Typography>
-                                    </StepLabel>
-                                    <StepContent>
-                                        <Typography variant="body2" color="text.secondary">{step.address}</Typography>
-                                        {step.distance && (
-                                            <Typography variant="caption" sx={{ display: 'block', mt: 0.5, color: 'primary.main' }}>
-                                                + {step.distance} ({step.time})
-                                            </Typography>
-                                        )}
-                                    </StepContent>
-                                </Step>
-                            ))}
-                        </Stepper>
-                    </Box>
-                )}
+                            <Stepper orientation="vertical" activeStep={-1}>
+                                {steps.map((step, index) => (
+                                    <Step key={index} expanded>
+                                        <StepLabel 
+                                            onClick={() => handleStepClick(step)}
+                                            sx={{ 
+                                                cursor: 'pointer', 
+                                                '&:hover': { bgcolor: 'action.hover', borderRadius: 1 } 
+                                            }}
+                                        >
+                                            <Typography fontWeight="bold">{step.label}</Typography>
+                                        </StepLabel>
+                                        <StepContent>
+                                            <Typography variant="body2" color="text.secondary">{step.address}</Typography>
+                                            {step.distance && (
+                                                <Typography variant="caption" sx={{ display: 'block', mt: 0.5, color: 'primary.main' }}>
+                                                    + {step.distance} ({step.time})
+                                                </Typography>
+                                            )}
+                                        </StepContent>
+                                    </Step>
+                                ))}
+                            </Stepper>
+                        </Box>
+                    )}
+                </Box>
+
+                {/* Always Visible Navigation Action */}
+                <Box sx={{ mt: 'auto', pt: 3 }}>
+                    <Divider sx={{ mb: 3 }} />
+                    <Button 
+                        variant="contained" 
+                        color="primary" 
+                        fullWidth 
+                        size="large"
+                        disabled={loading}
+                        onClick={() => {
+                            if (!selectedOffer || !startAddress) return;
+
+                            const baseUrl = "https://www.google.com/maps/dir/?api=1";
+                            const origin = encodeURIComponent(startAddress);
+                            const destination = encodeURIComponent(formatAddress(selectedOffer.event.address));
+                            
+                            // Extract intermediate stops
+                            const waypointAddresses = selectedOffer.passengers
+                                .map(p => formatAddress(p.pickup.address))
+                                .map(addr => encodeURIComponent(addr))
+                                .join('|');
+
+                            let url = `${baseUrl}&origin=${origin}&destination=${destination}`;
+                            if (waypointAddresses) {
+                                url += `&waypoints=${waypointAddresses}`;
+                            }
+                            url += "&travelmode=driving&dir_action=navigate";
+
+                            window.open(url, '_blank');
+                        }}
+                        startIcon={<MapIcon />}
+                        sx={{ py: 1.5, borderRadius: 2 }}
+                    >
+                        Open in Google Maps App
+                    </Button>
+                    <Typography variant="caption" display="block" sx={{ mt: 1.5, color: 'text.secondary', textAlign: 'center', px: 1 }}>
+                        Launch Google Maps for real-time traffic and voice-guided navigation.
+                    </Typography>
+                </Box>
             </Paper>
         </Stack>
       )}

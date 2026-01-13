@@ -9,17 +9,6 @@ import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
-import GroupIcon from '@mui/icons-material/Group';
-import PersonIcon from '@mui/icons-material/Person';
-import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
-import LocalTaxiIcon from '@mui/icons-material/LocalTaxi';
-import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
-import EmojiTransportationIcon from '@mui/icons-material/EmojiTransportation';
-import SettingsSuggestIcon from '@mui/icons-material/SettingsSuggest';
-import MapIcon from '@mui/icons-material/Map';
-import ChatIcon from '@mui/icons-material/Chat';
 import HomeIcon from '@mui/icons-material/Home';
 import LogoutIcon from '@mui/icons-material/Logout';
 import IconButton from '@mui/material/IconButton';
@@ -30,40 +19,9 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { allocationService } from '@/features/allocation/allocationService';
 import ColorModeIconDropdown from '../../shared-theme/ColorModeIconDropdown';
+import { getMenuItems } from './menuConfig';
 
 const drawerWidth = 240;
-
-type MenuItem =
-  | { kind: 'header'; title: string }
-  | { kind: 'item'; text: string; icon: React.ReactNode; href: string };
-
-const generalItems: MenuItem[] = [
-  { kind: 'header', title: 'General Setup' },
-  { kind: 'item', text: 'Profile Setup', icon: <PersonIcon />, href: '/profile' },
-  { kind: 'item', text: 'Groups', icon: <GroupIcon />, href: '/groups' },
-];
-
-const passengerItems: MenuItem[] = [
-  { kind: 'header', title: 'Passenger Core' },
-  { kind: 'item', text: 'Event List', icon: <FormatListBulletedIcon />, href: '/event-list' },
-  { kind: 'item', text: 'My Lifts', icon: <EmojiTransportationIcon />, href: '/my-lifts' },
-];
-
-const driverItems: MenuItem[] = [
-  { kind: 'header', title: 'Driver Core' },
-  { kind: 'item', text: 'Car Management', icon: <DirectionsCarIcon />, href: '/cars' },
-  { kind: 'item', text: 'My Lift Offers', icon: <LocalTaxiIcon />, href: '/lift-offers' },
-  { kind: 'item', text: 'Route View', icon: <MapIcon />, href: '/route' },
-];
-
-const adminItems: MenuItem[] = [
-  { kind: 'header', title: 'Admin Management' },
-  { kind: 'item', text: 'Admin Dashboard', icon: <DashboardIcon />, href: '/admin-dashboard' },
-  { kind: 'item', text: 'Pickup Points', icon: <LocationOnIcon />, href: '/admin-dashboard/pickup-points' },
-  { kind: 'item', text: 'Allocation Console', icon: <SettingsSuggestIcon />, href: '/admin-dashboard/allocation' },
-  { kind: 'item', text: 'Communication Center', icon: <ChatIcon />, href: '/chat' },
-  { kind: 'item', text: 'API Usage', icon: <DashboardIcon />, href: '/admin-dashboard/usage' },
-];
 
 export default function CarelessSidebar() {
   const pathname = usePathname();
@@ -85,12 +43,9 @@ export default function CarelessSidebar() {
     checkAdmin();
   }, [user]);
 
-  const menuItems = [
-    ...generalItems,
-    ...passengerItems,
-    ...driverItems,
-    ...(isAdmin ? adminItems : []),
-  ];
+  const menuItems = React.useMemo(() => {
+    return getMenuItems(user?.role, isAdmin);
+  }, [user?.role, isAdmin]);
 
   return (
     <Drawer
