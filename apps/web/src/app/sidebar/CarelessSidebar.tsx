@@ -18,7 +18,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { allocationService } from '@/features/allocation/allocationService';
-import ColorModeIconDropdown from '../../shared-theme/ColorModeIconDropdown';
+import ColorModeIconDropdown from '@/components/shared-theme/ColorModeIconDropdown';
 import { getMenuItems } from './menuConfig';
 
 const drawerWidth = 240;

@@ -1,8 +1,8 @@
 'use client';
 import * as React from 'react';
 import Typography from '@mui/material/Typography';
-import ColorModeSelect from '../../shared-theme/ColorModeSelect';
-import SitemarkIcon from '../SitemarkIcon';
+import ColorModeSelect from '@/components/shared-theme/ColorModeSelect';
+import SitemarkIcon from '@/components/shared/SitemarkIcon';
 import { AuthContainer, AuthCard } from './styles';
 
 interface AuthLayoutProps {
