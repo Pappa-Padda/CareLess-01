@@ -44,6 +44,10 @@ export const createCar = async (req: Request, res: Response) => {
       });
     }
 
+    // Check if this is the first car for the user
+    const existingCarsCount = await prisma.car.count({ where: { driverId: userId } });
+    const isFirstCar = existingCarsCount === 0;
+
     const car = await prisma.car.create({
       data: {
         driverId: userId,
@@ -53,6 +57,7 @@ export const createCar = async (req: Request, res: Response) => {
         licensePlate,
         color,
         seatCapacity: parseInt(seatCapacity),
+        isDefault: isFirstCar,
       },
     });
 

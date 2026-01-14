@@ -3,8 +3,8 @@ import { CreateEventDTO, Event, UpdateEventDTO } from '../types';
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export const eventService = {
-  getEvents: async (): Promise<Event[]> => {
-    const res = await fetch(`${API_URL}/events`, {
+  getEvents: async (filter: 'upcoming' | 'past' = 'upcoming'): Promise<Event[]> => {
+    const res = await fetch(`${API_URL}/events?filter=${filter}`, {
       credentials: 'include',
     });
     if (!res.ok) throw new Error('Failed to fetch events');

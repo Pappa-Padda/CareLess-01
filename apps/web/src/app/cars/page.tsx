@@ -13,7 +13,7 @@ import { CreateCarDTO, Car, UpdateCarDTO } from '@/features/cars/types';
 import { useAuth } from '@/context/AuthContext';
 
 export default function CarsPage() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [cars, setCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
   const [openDialog, setOpenDialog] = useState(false);
@@ -89,6 +89,7 @@ export default function CarsPage() {
       await carService.updateCar(data.id, data);
     } else {
       await carService.createCar(data as CreateCarDTO);
+      await refreshUser(); // Refresh user state to update isDriver status if this is the first car
     }
     fetchCars();
   };

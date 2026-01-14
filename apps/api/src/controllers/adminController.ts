@@ -78,7 +78,7 @@ export const getPickups = async (req: Request, res: Response) => {
 
 export const createPickup = async (req: Request, res: Response) => {
   try {
-    const { time, nickname, street, city, province, postalCode, country, link, latitude, longitude } = req.body;
+    const { time, nickname, street, city, province, postalCode, country, link, latitude, longitude, passengerCount } = req.body;
 
     // Use a transaction to ensure both Address and Pickup are created or neither
     const newPickup = await prisma.$transaction(async (prisma) => {
@@ -100,7 +100,7 @@ export const createPickup = async (req: Request, res: Response) => {
         data: {
           time: new Date(time), // Ensure time is a Date object
           addressId: address.id,
-          passengerCount: 1, // Default to 1 or passed from body if needed
+          passengerCount: Number(passengerCount) || 1, 
         },
         include: {
           address: true,
@@ -120,7 +120,7 @@ export const createPickup = async (req: Request, res: Response) => {
 export const updatePickup = async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id);
-    const { time, nickname, street, city, province, postalCode, country, link, latitude, longitude } = req.body;
+    const { time, nickname, street, city, province, postalCode, country, link, latitude, longitude, passengerCount } = req.body;
 
     const updatedPickup = await prisma.$transaction(async (prisma) => {
       // 1. Get current pickup to find addressId
@@ -153,6 +153,7 @@ export const updatePickup = async (req: Request, res: Response) => {
         where: { id },
         data: {
           time: new Date(time),
+          passengerCount: Number(passengerCount) || 1,
         },
         include: {
           address: true,

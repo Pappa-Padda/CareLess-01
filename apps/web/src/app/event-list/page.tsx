@@ -11,6 +11,8 @@ import Stack from '@mui/material/Stack';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Checkbox from '@mui/material/Checkbox';
 import ButtonGroup from '@mui/material/ButtonGroup';
+import ToggleButton from '@mui/material/ToggleButton';
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Paper from '@mui/material/Paper';
 import Avatar from '@mui/material/Avatar';
 import { useRouter } from 'next/navigation';
@@ -46,6 +48,8 @@ const columns: Column<Event>[] = [
   { id: 'startTime', label: 'Time', width: 150 },
   { id: 'name', label: 'Event Name', sortable: true },
   { id: 'address', label: 'Location' },
+  { id: 'requestCount', label: 'Requests', align: 'center', width: 100 },
+  { id: 'totalSeats', label: 'Seats', align: 'center', width: 100 },
   { id: 'actions', label: 'Actions', align: 'right', width: 320 },
 ];
 
@@ -66,14 +70,32 @@ export default function EventListPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [pageError, setPageError] = useState<string | null>(null);
   
+  // Filters
+  const [timeFilter, setTimeFilter] = useState<'upcoming' | 'past'>('upcoming');
+  const [groupFilter, setGroupFilter] = useState<number | 'all'>('all');
+  
   // Lifts Logic
   const [cars, setCars] = useState<Car[]>([]);
   const [eventStatus, setEventStatus] = useState<Record<string, 'offered' | 'requested' | null>>({}); // Key is virtual ID (string)
+  const [myOfferSeats, setMyOfferSeats] = useState<Record<string, number>>({}); // Key is virtual ID (string) -> seats
   const [processingEvents, setProcessingEvents] = useState<Record<string, boolean>>({});
   
   // Car Selection Dialog
   const [carDialogOpen, setCarDialogOpen] = useState(false);
   const [selectedEventForOffer, setSelectedEventForOffer] = useState<{ id: number, date: string } | null>(null);
+
+  const updateEventStats = (eventId: number | string, deltaRequests: number, deltaSeats: number) => {
+    setEvents(prev => prev.map(e => {
+        if (e.id === eventId) {
+            return {
+                ...e,
+                requestCount: Math.max(0, (e.requestCount || 0) + deltaRequests),
+                totalSeats: Math.max(0, (e.totalSeats || 0) + deltaSeats)
+            };
+        }
+        return e;
+    }));
+  };
 
   // Create Event Dialog State
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -96,7 +118,13 @@ export default function EventListPage() {
   });
 
   const sortedAndGroupedEvents = useMemo(() => {
-    const sorted = [...events].sort((a, b) => {
+    // 1. Filter by Group
+    let filtered = events;
+    if (groupFilter !== 'all') {
+      filtered = events.filter(e => e.groupId === groupFilter);
+    }
+
+    const sorted = [...filtered].sort((a, b) => {
       if (sortConfig.key === 'groupId') {
         const valA = a.group?.name || '';
         const valB = b.group?.name || '';
@@ -134,13 +162,13 @@ export default function EventListPage() {
       acc[groupId].events.push(event);
       return acc;
     }, {} as Record<string, { groupName: string; groupProfilePicture?: string; events: Event[] }>);
-  }, [events, sortConfig]);
+  }, [events, sortConfig, groupFilter]);
 
   const fetchEvents = useCallback(async () => {
     setIsLoading(true);
     setPageError(null);
     try {
-      const data = await eventService.getEvents();
+      const data = await eventService.getEvents(timeFilter);
       setEvents(data);
     } catch (error) {
       console.error('Failed to fetch events', error);
@@ -148,7 +176,7 @@ export default function EventListPage() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [timeFilter]);
 
   const fetchAdminGroups = useCallback(async () => {
     try {
@@ -180,10 +208,13 @@ export default function EventListPage() {
             const { offers } = await liftService.getMyOffers();
             setEventStatus(prev => {
                 const newStatus = { ...prev };
+                const newSeats: Record<string, number> = {};
                 offers.forEach(o => {
                     const vid = getVirtualId(o.eventId, o.date);
                     newStatus[vid] = 'offered';
+                    newSeats[vid] = o.availableSeats;
                 });
+                setMyOfferSeats(prevSeats => ({ ...prevSeats, ...newSeats }));
                 return newStatus;
             });
         }
@@ -230,6 +261,7 @@ export default function EventListPage() {
     // Optimistic Update
     const newStatus = currentStatus === 'requested' ? null : 'requested';
     setEventStatus(prev => ({ ...prev, [virtualId]: newStatus }));
+    updateEventStats(event.id, newStatus === 'requested' ? 1 : -1, 0);
 
     try {
         if (currentStatus === 'requested') {
@@ -242,6 +274,7 @@ export default function EventListPage() {
         alert('Failed to update request. Please try again.');
         // Revert
         setEventStatus(prev => ({ ...prev, [virtualId]: currentStatus }));
+        updateEventStats(event.id, newStatus === 'requested' ? -1 : 1, 0);
     } finally {
         setProcessingEvents(prev => ({ ...prev, [virtualId]: false }));
     }
@@ -253,6 +286,10 @@ export default function EventListPage() {
 
     // Optimistic
     setEventStatus(prev => ({ ...prev, [virtualId]: 'offered' }));
+    const seats = Math.max(0, car.seatCapacity - 1);
+    setMyOfferSeats(prev => ({ ...prev, [virtualId]: seats }));
+    updateEventStats(virtualId, 0, seats);
+
     setCarDialogOpen(false);
     setSelectedEventForOffer(null);
 
@@ -262,6 +299,12 @@ export default function EventListPage() {
         console.error(err);
         alert('Failed to create offer');
         setEventStatus(prev => ({ ...prev, [virtualId]: null }));
+        setMyOfferSeats(prev => {
+            const next = { ...prev };
+            delete next[virtualId];
+            return next;
+        });
+        updateEventStats(virtualId, 0, -seats);
     } finally {
         setProcessingEvents(prev => ({ ...prev, [virtualId]: false }));
     }
@@ -278,14 +321,24 @@ export default function EventListPage() {
              if (processingEvents[virtualId]) return;
              setProcessingEvents(prev => ({ ...prev, [virtualId]: true }));
              
+             const seats = myOfferSeats[virtualId] || 0;
+
              // Optimistic
              setEventStatus(prev => ({ ...prev, [virtualId]: null }));
+             setMyOfferSeats(prev => {
+                 const next = { ...prev };
+                 delete next[virtualId];
+                 return next;
+             });
+             updateEventStats(event.id, 0, -seats);
 
              liftService.deleteOffer(realId, dateStr)
                 .catch(err => {
                     console.error(err);
                     alert('Failed to cancel offer');
                     setEventStatus(prev => ({ ...prev, [virtualId]: 'offered' }));
+                    setMyOfferSeats(prev => ({ ...prev, [virtualId]: seats }));
+                    updateEventStats(event.id, 0, seats);
                 })
                 .finally(() => {
                     setProcessingEvents(prev => ({ ...prev, [virtualId]: false }));
@@ -363,15 +416,45 @@ export default function EventListPage() {
 
   return (
     <PageContainer>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-        <PageHeading>Upcoming Events</PageHeading>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => setIsDialogOpen(true)}
-        >
-          Create Event
-        </Button>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mb: 4 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <PageHeading>{timeFilter === 'upcoming' ? 'Upcoming Events' : 'Past Events'}</PageHeading>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setIsDialogOpen(true)}
+            >
+              Create Event
+            </Button>
+        </Box>
+
+        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems="center">
+            <ToggleButtonGroup
+                color="primary"
+                value={timeFilter}
+                exclusive
+                onChange={(e, val) => { if (val) setTimeFilter(val); }}
+                aria-label="time filter"
+                size="small"
+            >
+                <ToggleButton value="upcoming">Upcoming Events</ToggleButton>
+                <ToggleButton value="past">Past Events</ToggleButton>
+            </ToggleButtonGroup>
+
+            <CustomTextField
+                select
+                label="Filter by Group"
+                value={groupFilter}
+                onChange={(e) => setGroupFilter(e.target.value as number | 'all')}
+                size="small"
+                sx={{ minWidth: 250 }}
+            >
+                <MenuItem value="all">All Groups</MenuItem>
+                {groups.map((group) => (
+                    <MenuItem key={group.id} value={group.id}>{group.name}</MenuItem>
+                ))}
+            </CustomTextField>
+        </Stack>
       </Box>
 
       <ErrorMessage message={pageError} />
@@ -396,7 +479,7 @@ export default function EventListPage() {
                 isLoading={false} // Parent handles loading
                 sortConfig={sortConfig}
                 onSort={handleSort}
-                emptyMessage="No upcoming events for this group."
+                emptyMessage={timeFilter === 'upcoming' ? "No upcoming events for this group." : "No past events for this group."}
                 renderCell={(event, column) => {
                   if (column.id === 'date') {
                     return <Typography variant="body2">{formatDate(event.date)}</Typography>;
@@ -429,6 +512,12 @@ export default function EventListPage() {
                             {addr.nickname && <Typography variant="caption" color="text.secondary">{addr.street}</Typography>}
                         </Box>
                     );
+                  }
+                  if (column.id === 'requestCount') {
+                    return <Typography variant="body2">{event.requestCount || 0}</Typography>;
+                  }
+                  if (column.id === 'totalSeats') {
+                    return <Typography variant="body2">{event.totalSeats || 0}</Typography>;
                   }
                   if (column.id === 'actions') {
                     const virtualId = String(event.id);
@@ -474,7 +563,7 @@ export default function EventListPage() {
             </Paper>
           ))}
           {Object.keys(sortedAndGroupedEvents).length === 0 && !isLoading && (
-            <InfoMessage message="No upcoming events found for your groups." />
+            <InfoMessage message={timeFilter === 'upcoming' ? "No upcoming events found for your groups." : "No past events found for your groups."} />
           )}
         </Stack>
       )}

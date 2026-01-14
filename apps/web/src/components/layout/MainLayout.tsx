@@ -3,7 +3,7 @@ import * as React from 'react';
 import Box from '@mui/material/Box';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import CarelessSidebar from '../shared/sidebar/CarelessSidebar';
+import CarelessSidebar from '@/app/sidebar/CarelessSidebar';
 
 import GoogleMapsProvider from '../shared/GoogleMapsProvider';
 
