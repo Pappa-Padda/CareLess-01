@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getGroups, createGroup, joinGroup, leaveGroup, getGroupMembers, updateGroup } from '../controllers/groupController';
+import { getGroups, createGroup, joinGroup, leaveGroup, getGroupMembers, updateGroup, toggleGroupAdmin } from '../controllers/groupController';
 import { requireAuth } from '../middleware/auth';
 import upload from '../middleware/upload';
 
@@ -13,5 +13,6 @@ router.put('/:id', upload.single('profilePicture'), updateGroup);
 router.post('/join', joinGroup);
 router.post('/leave', leaveGroup);
 router.get('/:id/members', getGroupMembers);
+router.put('/:id/members/:userId', toggleGroupAdmin);
 
 export default router;

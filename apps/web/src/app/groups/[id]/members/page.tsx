@@ -6,6 +6,7 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Avatar from '@mui/material/Avatar';
 import Chip from '@mui/material/Chip';
+import Button from '@mui/material/Button';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
@@ -19,6 +20,7 @@ import CustomTable, { Column } from '@/components/shared/ui/CustomTable';
 import InfoMessage from '@/components/shared/ui/InfoMessage';
 import { groupService, GroupMember } from '@/features/groups/groupService';
 import { getImageUrl } from '@/utils/images';
+import { useAuth } from '@/context/AuthContext';
 
 interface GroupMembersPageProps {
   params: Promise<{ id: string }>;
@@ -26,12 +28,14 @@ interface GroupMembersPageProps {
 
 export default function GroupMembersPage({ params }: GroupMembersPageProps) {
   const router = useRouter();
+  const { user } = useAuth();
   const resolvedParams = use(params);
   const groupId = Number(resolvedParams.id);
 
   const [members, setMembers] = useState<GroupMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchMembers = async () => {
@@ -55,12 +59,32 @@ export default function GroupMembersPage({ params }: GroupMembersPageProps) {
     fetchMembers();
   }, [groupId]);
 
+  const handleToggleAdmin = async (memberId: number, currentStatus: boolean) => {
+    try {
+      setActionLoading(memberId);
+      await groupService.updateMemberRole(groupId, memberId, !currentStatus);
+      
+      // Optimistic update
+      setMembers(prev => prev.map(m => 
+        m.userId === memberId ? { ...m, isAdmin: !currentStatus } : m
+      ));
+    } catch (err) {
+      console.error('Failed to update role', err);
+      // Revert or show error could be handled here
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const isCurrentUserAdmin = members.find(m => m.userId === user?.id)?.isAdmin || false;
+
   const columns: Column<GroupMember>[] = [
     { id: 'profilePicture', label: '', width: 60 },
     { id: 'name', label: 'Name', sortable: true },
     { id: 'phoneNumber', label: 'Contact', sortable: true },
     { id: 'isDriver', label: 'Role', sortable: true }, 
     { id: 'isAdmin', label: 'Status', sortable: true },
+    ...(isCurrentUserAdmin ? [{ id: 'actions' as keyof GroupMember, label: 'Actions', align: 'right' as const }] : []),
   ];
 
   const renderCell = (member: GroupMember, column: Column<GroupMember>) => {
@@ -114,6 +138,20 @@ export default function GroupMembersPage({ params }: GroupMembersPageProps) {
             />
         ) : (
             <Typography variant="caption" color="text.secondary">Member</Typography>
+        );
+      case 'actions':
+        if (member.userId === user?.id) return null; // Can't change own role here
+        
+        return (
+            <Button 
+                size="small" 
+                variant="text" 
+                color={member.isAdmin ? "error" : "primary"}
+                onClick={() => handleToggleAdmin(member.userId, member.isAdmin)}
+                disabled={actionLoading === member.userId}
+            >
+                {member.isAdmin ? 'Demote' : 'Make Admin'}
+            </Button>
         );
       default:
         return null;

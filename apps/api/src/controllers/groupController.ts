@@ -307,9 +307,90 @@ export const updateGroup = async (req: Request, res: Response) => {
       },
     });
 
-    return res.json({ group: updatedGroup });
-  } catch (err) {
-    console.error('Error updating group:', err);
-    return res.status(500).json({ error: 'Server error' });
-  }
-};
+        return res.json({ group: updatedGroup });
+
+      } catch (err) {
+
+        console.error('Error updating group:', err);
+
+        return res.status(500).json({ error: 'Server error' });
+
+      }
+
+    };
+
+    
+
+    export const toggleGroupAdmin = async (req: Request, res: Response) => {
+
+      try {
+
+        const userId = (req as any).user?.userId;
+
+        const groupId = Number(req.params.id);
+
+        const targetUserId = Number(req.params.userId);
+
+        const { isAdmin } = req.body;
+
+    
+
+        if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+
+        if (isNaN(groupId) || isNaN(targetUserId)) return res.status(400).json({ error: 'Invalid IDs' });
+
+        if (typeof isAdmin !== 'boolean') return res.status(400).json({ error: 'isAdmin status required' });
+
+    
+
+        // Verify requester is admin
+
+        const requesterMembership = await prisma.userGroupAssociation.findUnique({
+
+          where: {
+
+            userId_groupId: { userId, groupId },
+
+          },
+
+        });
+
+    
+
+        if (!requesterMembership?.isAdmin) {
+
+          return res.status(403).json({ error: 'Only admins can manage roles' });
+
+        }
+
+    
+
+        // Update target member
+
+        await prisma.userGroupAssociation.update({
+
+          where: {
+
+            userId_groupId: { userId: targetUserId, groupId },
+
+          },
+
+          data: { isAdmin },
+
+        });
+
+    
+
+        return res.json({ ok: true });
+
+      } catch (err) {
+
+        console.error('Error toggling admin status:', err);
+
+        return res.status(500).json({ error: 'Server error' });
+
+      }
+
+    };
+
+    
