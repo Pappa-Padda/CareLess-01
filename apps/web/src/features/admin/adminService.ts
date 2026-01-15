@@ -1,6 +1,6 @@
-import { Role } from '@repo/types';
-
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+export type Role = 'USER' | 'ADMIN' | 'MODERATOR';
 
 export interface DashboardStats {
   userCount: number;

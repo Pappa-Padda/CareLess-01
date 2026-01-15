@@ -29,6 +29,7 @@ import { RouteInfo } from '@/features/maps/hooks/useRouteCalculation';
 
 import { useAuth } from '@/context/AuthContext';
 import { liftService, DriverDashboardOffer } from '@/features/lifts/liftService';
+import { MAPS_RATE_LIMIT_MINUTES } from '@/config/constants';
 
 // Placeholder for StaticRouteMap if it's meant to be a local subcomponent or separate file.
 const StaticRouteMap = ({ loading, onClick }: { loading: boolean; onClick: () => void }) => (
@@ -219,9 +220,11 @@ function RouteViewContent() {
       setMapError(null);
   };
 
-  const handleMapError = React.useCallback((error: { code?: string }) => {
+  const handleMapError = React.useCallback((error: { code?: string; message?: string }) => {
       console.error("Map Error Callback:", error);
-      if (error?.code === 'REQUEST_DENIED') {
+      if (error?.code === 'RATE_LIMIT' || error?.message === 'RATE_LIMIT_EXCEEDED') {
+          setMapError('RATE_LIMIT_EXCEEDED');
+      } else if (error?.code === 'REQUEST_DENIED') {
           setMapError("Google Maps Directions API is not enabled for this API Key. Please enable both 'Directions API' and 'Routes API' in Google Cloud Console.");
       } else if (error?.code === 'ZERO_RESULTS') {
           setMapError("No route could be found between these locations.");
@@ -482,7 +485,9 @@ function RouteViewContent() {
                 <Divider sx={{ mb: 2 }} />
                 
                 <Box sx={{ flexGrow: 1 }}>
-                    {mapError ? (
+                    {mapError === 'RATE_LIMIT_EXCEEDED' ? (
+                        <InfoMessage message={`You have reached the request limit. Please try again in ${MAPS_RATE_LIMIT_MINUTES} minutes.`} />
+                    ) : mapError ? (
                         <ErrorMessage message={mapError} />
                     ) : !routeInfo ? (
                         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 8, gap: 2 }}>

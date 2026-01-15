@@ -20,9 +20,8 @@
     ],
     "paths": {
       "@/*": ["./src/*"],
-      "@repo/database": ["../../packages/database/src/index.ts"],
-      "@repo/types": ["../../packages/types/src/index.ts"]
-    }
+      "@repo/database": ["../../packages/database/src/index.ts"]
+    },
   },
   "include": [
     "next-env.d.ts",

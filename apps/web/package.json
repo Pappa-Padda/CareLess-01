@@ -16,7 +16,6 @@
     "@mui/material": "^7.3.6",
     "@mui/x-charts": "^8.24.0",
     "@repo/database": "*",
-    "@repo/types": "*",
     "@vis.gl/react-google-maps": "^1.5.1",
     "date-fns": "^4.1.0",
     "libphonenumber-js": "^1.12.34",

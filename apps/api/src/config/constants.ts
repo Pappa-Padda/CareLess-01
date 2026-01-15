@@ -1,0 +1,4 @@
+// Shared Constants for Maps API
+export const MAPS_RATE_LIMIT_MINUTES = 10;
+export const MAPS_RATE_LIMIT_WINDOW_MS = MAPS_RATE_LIMIT_MINUTES * 60 * 1000;
+export const MAPS_RATE_LIMIT_MAX_REQUESTS = 100;

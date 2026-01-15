@@ -145,8 +145,17 @@ export default function Routes({
             });
 
             if (!response.ok) {
-                const errData = await response.json();
-                throw new Error(errData.error || `Routes API failed: ${response.status}`);
+                if (response.status === 429) {
+                    throw new Error('RATE_LIMIT_EXCEEDED');
+                }
+                let errorMessage = `Routes API failed: ${response.status}`;
+                try {
+                    const errData = await response.json();
+                    if (errData.error) errorMessage = errData.error;
+                } catch {
+                    // Response not JSON, use default message
+                }
+                throw new Error(errorMessage);
             }
 
             const data = await response.json();
@@ -171,7 +180,9 @@ export default function Routes({
             if (currentFetchId !== fetchIdRef.current) return;
             console.error('Routes API Error:', err);
             if (onErrorRef.current) {
-                onErrorRef.current({ message: err instanceof Error ? err.message : 'Unknown error' });
+                const message = err instanceof Error ? err.message : 'Unknown error';
+                const code = message === 'RATE_LIMIT_EXCEEDED' ? 'RATE_LIMIT' : undefined;
+                onErrorRef.current({ message, code });
             }
         }
     };
