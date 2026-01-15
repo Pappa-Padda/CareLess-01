@@ -37,12 +37,14 @@ export interface Pickup {
   id: number;
   time: string; // ISO Date string
   addressId: number;
+  groupId: number | null;
   passengerCount: number;
   address: Address;
 }
 
 export interface PickupFormData extends Omit<Address, 'id'> {
   time: Date | string;
+  groupId?: number;
 }
 
 export interface ApiUsage {

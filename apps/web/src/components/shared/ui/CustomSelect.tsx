@@ -29,7 +29,7 @@ export default function CustomSelect({
       </InputLabel>
       <Select
         labelId={labelId}
-        displayEmpty={false}
+        displayEmpty
         notched
         label={label}
         {...props}

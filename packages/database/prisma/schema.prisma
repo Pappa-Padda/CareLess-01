@@ -110,6 +110,7 @@ model Group {
   // Relations
   userGroupAssociation UserGroupAssociation[]
   events               Event[]
+  pickups              Pickup[]
 }
 
 model UserGroupAssociation {
@@ -182,11 +183,13 @@ model LiftOffer {
 model Pickup {
   id             Int      @id @default(autoincrement()) @map("Pickup_ID")
   addressId      Int      @map("Address_ID")
+  groupId        Int?     @map("Group_ID")
   time           DateTime @map("Time") @db.Time
   passengerCount Int      @default(1) @map("Passenger_Count")
 
   // Relations
   address     Address               @relation(fields: [addressId], references: [id])
+  group       Group?                @relation(fields: [groupId], references: [id], onDelete: Cascade)
   allocations PassengerAllocation[]
 }
 

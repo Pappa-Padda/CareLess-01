@@ -5,12 +5,15 @@ export interface AllocationPassenger {
   passengerId: number;
   name: string;
   profilePicture: string | null;
+  defaultAddressNickname?: string;
+  location?: { lat: number; lng: number; address?: string } | null;
 }
 
 export interface AllocationOffer {
   id: number;
   driverName: string;
   driverProfilePicture: string | null;
+  driverLocation?: { lat: number; lng: number } | null;
   carInfo: string;
   totalSeats: number;
   availableSeats: number;
@@ -19,6 +22,7 @@ export interface AllocationOffer {
     name: string;
     pickupTime?: string;
     pickupAddress?: string;
+    location?: { lat: number; lng: number } | null;
   }[];
 }
 
@@ -41,6 +45,12 @@ export interface Event {
 }
 
 export interface AllocationData {
+  event: {
+    id: number;
+    name: string;
+    date: string;
+    location: { lat: number; lng: number; address?: string } | null;
+  };
   unassigned: AllocationPassenger[];
   offers: AllocationOffer[];
 }

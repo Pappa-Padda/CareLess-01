@@ -22,6 +22,7 @@ import CustomTable, { Column } from '@/components/shared/ui/CustomTable';
 import ErrorMessage from '@/components/shared/ui/ErrorMessage';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
+import AddLocationAltIcon from '@mui/icons-material/AddLocationAlt';
 import { getImageUrl } from '@/utils/images';
 
 interface Group {
@@ -231,6 +232,16 @@ export default function GroupDashboard() {
       case 'actions':
         return (
           <Stack direction="row" spacing={1} justifyContent="flex-end">
+            {group.isAdmin && (
+                <IconButton
+                    color="secondary"
+                    size="small"
+                    onClick={() => router.push(`/groups/${group.id}/pickup-points`)}
+                    title="Manage Pickup Points"
+                >
+                    <AddLocationAltIcon fontSize="small" />
+                </IconButton>
+            )}
             <IconButton
                 color="primary"
                 size="small"

@@ -74,6 +74,11 @@ export const getAllocationData = async (req: Request, res: Response) => {
                 name: true,
                 profilePicture: true,
                 phoneNumber: true,
+                addressList: {
+                  where: { isDefault: true },
+                  take: 1,
+                  include: { address: true }
+                }
               },
             },
           },
@@ -95,6 +100,11 @@ export const getAllocationData = async (req: Request, res: Response) => {
                 id: true,
                 name: true,
                 profilePicture: true,
+                addressList: {
+                    where: { isDefault: true },
+                    take: 1,
+                    include: { address: true }
+                }
               },
             },
           },
@@ -108,6 +118,11 @@ export const getAllocationData = async (req: Request, res: Response) => {
                   select: {
                     id: true,
                     name: true,
+                    addressList: {
+                        where: { isDefault: true },
+                        take: 1,
+                        include: { address: true }
+                    }
                   },
                 },
               },
@@ -122,17 +137,39 @@ export const getAllocationData = async (req: Request, res: Response) => {
       },
     });
 
+    const eventAddress = await prisma.address.findUnique({ where: { id: event.addressId } });
+
     return res.json({
+      event: {
+        id: event.id,
+        name: event.name,
+        date: event.date,
+        location: {
+            lat: eventAddress?.latitude ? Number(eventAddress.latitude) : null,
+            lng: eventAddress?.longitude ? Number(eventAddress.longitude) : null,
+            address: eventAddress?.street
+        }
+      },
       unassigned: unassigned.map(r => ({
         id: r.id,
         passengerId: r.passengerId,
         name: r.passenger.user.name,
         profilePicture: r.passenger.user.profilePicture,
+        defaultAddressNickname: r.passenger.user.addressList[0]?.address.nickname || 'Home',
+        location: r.passenger.user.addressList[0]?.address ? {
+            lat: Number(r.passenger.user.addressList[0].address.latitude),
+            lng: Number(r.passenger.user.addressList[0].address.longitude),
+            address: r.passenger.user.addressList[0].address.street
+        } : null
       })),
       offers: offers.map(o => ({
         id: o.id,
         driverName: o.driver.user.name,
         driverProfilePicture: o.driver.user.profilePicture,
+        driverLocation: o.driver.user.addressList[0]?.address ? {
+            lat: Number(o.driver.user.addressList[0].address.latitude),
+            lng: Number(o.driver.user.addressList[0].address.longitude)
+        } : null,
         carInfo: `${o.car.make} ${o.car.model}`,
         totalSeats: o.car.seatCapacity,
         availableSeats: o.availableSeats,
@@ -140,7 +177,13 @@ export const getAllocationData = async (req: Request, res: Response) => {
           id: a.passengerId,
           name: a.passenger.user.name,
           pickupTime: a.pickup.time,
-          pickupAddress: `${a.pickup.address.street}, ${a.pickup.address.city}`,
+          pickupAddress: a.pickup.address.nickname || a.pickup.address.street,
+          pickupPointId: a.pickup.groupId === null && a.pickup.addressId !== a.passenger.user.addressList[0]?.addressId ? a.pickup.id : (a.pickup.groupId ? a.pickup.id : undefined),
+          defaultAddressNickname: a.passenger.user.addressList[0]?.address.nickname || 'Home',
+          location: {
+            lat: Number(a.pickup.address.latitude),
+            lng: Number(a.pickup.address.longitude)
+          }
         })),
       })),
     });
@@ -202,31 +245,44 @@ export const commitAssignments = async (req: Request, res: Response) => {
 
       // 4. Create new allocations and update request status
       for (const assignment of assignments) {
-        const { passengerId, liftOfferId } = assignment;
+        const { passengerId, liftOfferId, pickupPointId } = assignment;
 
-        // Find/Create a default pickup for this passenger
-        // For now, we'll find the passenger's first address or use a placeholder
-        const addressAssoc = await tx.addressList.findFirst({
-          where: { userId: passengerId },
-          orderBy: { rank: 'asc' },
-        });
+        let finalPickupId: number | undefined;
 
-        // Use a default address if none found (fallback)
-        const addressId = addressAssoc?.addressId || event.addressId;
+        if (pickupPointId) {
+            const groupPickup = await tx.pickup.findUnique({ where: { id: Number(pickupPointId) } });
+            if (groupPickup) {
+                finalPickupId = groupPickup.id;
+            }
+        }
 
-        const pickup = await tx.pickup.create({
-          data: {
-            addressId,
-            time: event.startTime, // Default to event start time
-            passengerCount: 1,
-          },
-        });
+        if (!finalPickupId) {
+            let addressId = event.addressId;
+            const pickupTime = event.startTime;
+
+            const addressAssoc = await tx.addressList.findFirst({
+              where: { userId: passengerId },
+              orderBy: { rank: 'asc' },
+            });
+            if (addressAssoc) {
+                addressId = addressAssoc.addressId;
+            }
+
+            const pickup = await tx.pickup.create({
+              data: {
+                addressId,
+                time: pickupTime, 
+                passengerCount: 1,
+              },
+            });
+            finalPickupId = pickup.id;
+        }
 
         await tx.passengerAllocation.create({
           data: {
             liftOfferId,
             passengerId,
-            pickupId: pickup.id,
+            pickupId: finalPickupId!,
           },
         });
 

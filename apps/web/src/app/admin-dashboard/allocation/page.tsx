@@ -18,6 +18,14 @@ import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import Alert from '@mui/material/Alert';
 import CircularProgress from '@mui/material/CircularProgress';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import RadioGroup from '@mui/material/RadioGroup';
+import Radio from '@mui/material/Radio';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import { APIProvider, useMapsLibrary } from '@vis.gl/react-google-maps';
 
 import PersonIcon from '@mui/icons-material/Person';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
@@ -32,14 +40,37 @@ import ErrorMessage from '@/components/shared/ui/ErrorMessage';
 import InfoMessage from '@/components/shared/ui/InfoMessage';
 import CustomSelect from '@/components/shared/ui/CustomSelect';
 import { allocationService, AllocationPassenger, AllocationOffer, Group, Event } from '@/features/allocation/allocationService';
+import CustomDialog from '@/components/shared/ui/CustomDialog';
+import SubmitButton from '@/components/shared/ui/SubmitButton';
+import CancelButton from '@/components/shared/ui/CancelButton';
+import { groupService, PickupPoint } from '@/features/groups/groupService';
 import AllocationMessageDialog from '@/features/allocation/AllocationMessageDialog';
 import { getImageUrl } from '@/utils/images';
 
-export default function AllocationConsolePage() {
+// Extend local state types to include tracking of new assignments
+interface LocalAssignedPassenger {
+    id: number;
+    name: string;
+    pickupTime?: string;
+    pickupAddress?: string;
+    pickupPointId?: number; // New field for tracking selection
+    defaultAddressNickname?: string;
+    location?: { lat: number; lng: number } | null;
+    isSaved?: boolean;
+}
+
+interface LocalAllocationOffer extends Omit<AllocationOffer, 'passengers'> {
+    passengers: LocalAssignedPassenger[];
+    totalDistance?: string;
+}
+
+function AllocationContent() {
   const [groups, setGroups] = useState<Group[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<number | ''>('');
   const [events, setEvents] = useState<Event[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<number | ''>('');
+  
+  const [pickupPoints, setPickupPoints] = useState<PickupPoint[]>([]);
   
   const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(false);
@@ -48,12 +79,92 @@ export default function AllocationConsolePage() {
 
   // Staged State
   const [unassigned, setUnassigned] = useState<AllocationPassenger[]>([]);
-  const [offers, setOffers] = useState<AllocationOffer[]>([]);
+  const [offers, setOffers] = useState<LocalAllocationOffer[]>([]);
   const [hasChanges, setHasChanges] = useState(false);
 
   // Message Dialog State
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
-  const [selectedOfferForMessage, setSelectedOfferForMessage] = useState<AllocationOffer | null>(null);
+  const [selectedOfferForMessage, setSelectedOfferForMessage] = useState<LocalAllocationOffer | null>(null);
+
+  // Distance Calculation
+  const routesLib = useMapsLibrary('routes');
+  const [offerDistances, setOfferDistances] = useState<Record<number, string>>({});
+
+  useEffect(() => {
+    if (!routesLib || !selectedEvent || offers.length === 0) return;
+
+    const calculateDistances = async () => {
+      const service = new routesLib.DistanceMatrixService();
+      const newDistances: Record<number, string> = { ...offerDistances };
+      let changed = false;
+
+      for (const offer of offers) {
+        if (!offer.driverLocation) continue;
+        
+        // Unique destinations for this offer
+        const destinations: google.maps.LatLngLiteral[] = [];
+        const seenLocations = new Set<string>();
+
+        offer.passengers.forEach(p => {
+          let loc: { lat: number, lng: number } | null = null;
+          if (p.pickupPointId) {
+            const point = pickupPoints.find(pp => pp.id === p.pickupPointId);
+            if (point && point.address.latitude && point.address.longitude) {
+              loc = { lat: Number(point.address.latitude), lng: Number(point.address.longitude) };
+            }
+          } else if (p.location) {
+            loc = p.location;
+          }
+
+          if (loc) {
+            const key = `${loc.lat},${loc.lng}`;
+            if (!seenLocations.has(key)) {
+              seenLocations.add(key);
+              destinations.push(loc);
+            }
+          }
+        });
+
+        if (destinations.length === 0) {
+          if (newDistances[offer.id] !== '0 km') {
+            newDistances[offer.id] = '0 km';
+            changed = true;
+          }
+          continue;
+        }
+
+        try {
+          const response = await service.getDistanceMatrix({
+            origins: [offer.driverLocation],
+            destinations: destinations,
+            travelMode: google.maps.TravelMode.DRIVING,
+          });
+
+          if (response.rows[0]) {
+            let totalMeters = 0;
+            response.rows[0].elements.forEach(el => {
+              if (el.status === 'OK') {
+                totalMeters += el.distance.value;
+              }
+            });
+            const distanceStr = `${(totalMeters / 1000).toFixed(1)} km`;
+            if (newDistances[offer.id] !== distanceStr) {
+              newDistances[offer.id] = distanceStr;
+              changed = true;
+            }
+          }
+        } catch (err) {
+          // Silent catch
+        }
+      }
+
+      if (changed) {
+        setOfferDistances(newDistances);
+      }
+    };
+
+    calculateDistances();
+  }, [offers, routesLib, selectedEvent, pickupPoints]);
 
   useEffect(() => {
     const fetchInitial = async () => {
@@ -72,22 +183,28 @@ export default function AllocationConsolePage() {
 
   useEffect(() => {
     if (selectedGroup) {
-      const fetchEvents = async () => {
+      const fetchGroupData = async () => {
         try {
-          const data = await allocationService.getEvents(Number(selectedGroup));
-          setEvents(data.events);
-          if (data.events.length > 0) {
-              setSelectedEvent(data.events[0].id);
+          const [eventsData, pickupsData] = await Promise.all([
+            allocationService.getEvents(Number(selectedGroup)),
+            groupService.getPickupPoints(Number(selectedGroup))
+          ]);
+          
+          setEvents(eventsData.events);
+          setPickupPoints(pickupsData.pickups);
+
+          if (eventsData.events.length > 0) {
+              setSelectedEvent(eventsData.events[0].id);
           } else {
               setSelectedEvent('');
           }
           setUnassigned([]);
           setOffers([]);
         } catch {
-          setError('Failed to load events');
+          setError('Failed to load group data');
         }
       };
-      fetchEvents();
+      fetchGroupData();
     }
   }, [selectedGroup]);
 
@@ -96,7 +213,14 @@ export default function AllocationConsolePage() {
     try {
       const data = await allocationService.getAllocationData(eventId);
       setUnassigned(data.unassigned);
-      setOffers(data.offers);
+      
+      // Mark loaded offers as saved
+      const savedOffers = data.offers.map(o => ({
+        ...o,
+        passengers: o.passengers.map(p => ({ ...p, isSaved: true }))
+      }));
+      
+      setOffers(savedOffers);
       setHasChanges(false);
     } catch {
       setError('Failed to load allocation data');
@@ -111,7 +235,8 @@ export default function AllocationConsolePage() {
     }
   }, [selectedEvent, loadEventData]);
 
-  const handleManualAssign = (passenger: AllocationPassenger, offerId: number) => {
+  // Trigger Assignment Flow
+  const initiateAssignment = (passenger: AllocationPassenger, offerId: number) => {
     const offer = offers.find(o => o.id === offerId);
     if (!offer) return;
     
@@ -120,17 +245,34 @@ export default function AllocationConsolePage() {
         return;
     }
 
+    confirmAssignment(passenger, offerId, undefined);
+  };
+
+  const confirmAssignment = (
+      passenger: AllocationPassenger, 
+      offerId: number, 
+      pickupPointId?: number
+  ) => {
     setUnassigned(prev => prev.filter(p => p.id !== passenger.id));
     setOffers(prev => prev.map(o => {
       if (o.id === offerId) {
+        // Resolve address display for UI feedback
+        let displayAddress = 'Default / Home';
+        if (pickupPointId) {
+            const point = pickupPoints.find(p => p.id === pickupPointId);
+            if (point) displayAddress = point.address.nickname || point.address.street;
+        }
+
         return {
           ...o,
           passengers: [...o.passengers, { 
               id: passenger.passengerId, 
               name: passenger.name,
-              // Default/empty for newly assigned until saved/reloaded
-              pickupTime: undefined,
-              pickupAddress: undefined
+              pickupPointId: pickupPointId,
+              pickupAddress: displayAddress,
+              defaultAddressNickname: passenger.defaultAddressNickname || 'Home',
+              location: passenger.location,
+              isSaved: false
             }]
         };
       }
@@ -156,30 +298,46 @@ export default function AllocationConsolePage() {
       return o;
     }));
 
-    // Add back to unassigned
-    // We construct the AllocationPassenger object from the removed passenger data
-    // Note: We might be missing profilePicture if it wasn't preserved, but name/id are key.
-    // Ideally we should have full objects, but for now this fixes the logic error.
     const restoredPassenger: AllocationPassenger = {
-        id: Math.random(), // Temporary ID for list key until reload
+        id: Math.random(), 
         passengerId: passenger.id,
         name: passenger.name,
-        profilePicture: null // Cannot recover this without fuller state, but functional for re-assign
+        profilePicture: null 
     };
     
     setUnassigned(prev => [...prev, restoredPassenger]);
     setHasChanges(true);
   };
 
+  const handlePassengerPickupChange = (offerId: number, passengerId: number, pointId: number | '') => {
+    const point = pickupPoints.find(p => p.id === Number(pointId));
+    const displayAddress = point ? (point.address.nickname || point.address.street) : 'Default / Home';
+
+    setOffers(prev => prev.map(o => {
+      if (o.id === offerId) {
+        return {
+          ...o,
+          passengers: o.passengers.map(p => {
+            if (p.id === passengerId) {
+                return {
+                    ...p,
+                    pickupPointId: pointId ? Number(pointId) : undefined,
+                    pickupAddress: displayAddress
+                };
+            }
+            return p;
+          })
+        };
+      }
+      return o;
+    }));
+    setHasChanges(true);
+  };
+
   const handleAutoAssign = () => {
     const localUnassigned = [...unassigned];
     const localOffers = offers.map(o => ({ ...o, passengers: [...o.passengers] }));
-    const totalSeats = localOffers.reduce((sum, o) => sum + (o.totalSeats - o.passengers.length), 0);
-
-    if (localUnassigned.length > totalSeats) {
-        setError(`Not enough seats! ${localUnassigned.length - totalSeats} passengers will remain unassigned.`);
-    }
-
+    
     localOffers.forEach(offer => {
         const space = offer.totalSeats - offer.passengers.length;
         if (space > 0 && localUnassigned.length > 0) {
@@ -187,8 +345,8 @@ export default function AllocationConsolePage() {
             offer.passengers.push(...toAssign.map(p => ({ 
                 id: p.passengerId, 
                 name: p.name,
-                pickupTime: undefined,
-                pickupAddress: undefined
+                // Auto assign uses default
+                pickupAddress: 'Default / Home'
             })));
         }
     });
@@ -219,7 +377,11 @@ export default function AllocationConsolePage() {
     setLoading(true);
     try {
       const assignments = offers.flatMap(o => 
-        o.passengers.map(p => ({ passengerId: p.id, liftOfferId: o.id }))
+        o.passengers.map(p => ({ 
+            passengerId: p.id, 
+            liftOfferId: o.id, 
+            pickupPointId: p.pickupPointId 
+        }))
       );
       
       await allocationService.commitAssignments(Number(selectedEvent), assignments);
@@ -320,27 +482,12 @@ export default function AllocationConsolePage() {
                         </Stack>
                         <Divider sx={{ mb: 2 }} />
                         <Stack spacing={1.5}>
-                            {(() => {
-                                const totalAssigned = offers.reduce((sum, o) => sum + o.passengers.length, 0);
-                                const totalPassengers = unassigned.length + totalAssigned;
-
-                                if (totalPassengers === 0) {
-                                    return (
-                                        <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
-                                            No lift requests for this event.
-                                        </Typography>
-                                    );
-                                }
-
-                                if (unassigned.length === 0) {
-                                    return (
-                                        <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
-                                            All passengers assigned!
-                                        </Typography>
-                                    );
-                                }
-
-                                return unassigned.map(p => (
+                            {unassigned.length === 0 ? (
+                                <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
+                                    All passengers assigned!
+                                </Typography>
+                            ) : (
+                                unassigned.map(p => (
                                     <Paper key={p.id} sx={{ p: 1.5, borderRadius: 1 }} variant="outlined">
                                         <Stack direction="row" spacing={1.5} alignItems="center">
                                             <Avatar src={getImageUrl(p.profilePicture)} sx={{ width: 32, height: 32 }}>
@@ -354,7 +501,7 @@ export default function AllocationConsolePage() {
                                                 <Select
                                                     label="Assign"
                                                     value=""
-                                                    onChange={(e) => handleManualAssign(p, Number(e.target.value))}
+                                                    onChange={(e) => initiateAssignment(p, Number(e.target.value))}
                                                     sx={{ fontSize: '0.75rem' }}
                                                 >
                                                     {offers.filter(o => o.passengers.length < o.totalSeats).map(o => (
@@ -366,8 +513,8 @@ export default function AllocationConsolePage() {
                                             </FormControl>
                                         </Stack>
                                     </Paper>
-                                ));
-                            })()}
+                                ))
+                            )}
                         </Stack>
                     </Paper>
                 </Grid>
@@ -389,6 +536,15 @@ export default function AllocationConsolePage() {
                                                 <Typography variant="subtitle1" fontWeight="bold">
                                                     {offer.driverName}
                                                 </Typography>
+                                                {offerDistances[offer.id] && (
+                                                    <Chip 
+                                                        label={offerDistances[offer.id]} 
+                                                        size="small" 
+                                                        color="info" 
+                                                        variant="outlined" 
+                                                        sx={{ height: 20, fontSize: '0.65rem' }}
+                                                    />
+                                                )}
                                                 <Tooltip title="Generate WhatsApp Message">
                                                     <IconButton 
                                                         size="small" 
@@ -413,28 +569,66 @@ export default function AllocationConsolePage() {
                                         </Box>
                                     </Stack>
                                     <Divider sx={{ mb: 2, borderStyle: 'dashed' }} />
-                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                                    
+                                    <Stack spacing={2}>
                                         {offer.passengers.map(p => (
-                                            <Chip 
-                                                key={p.id}
-                                                label={p.name}
-                                                onDelete={() => handleRemovePassenger(p.id, offer.id)}
-                                                size="small"
-                                                color="primary"
-                                                variant="filled"
-                                            />
+                                            <Stack 
+                                                key={p.id} 
+                                                direction={{ xs: 'column', sm: 'row' }} 
+                                                spacing={1} 
+                                                alignItems={{ xs: 'stretch', sm: 'center' }}
+                                                sx={{ p: 1, bgcolor: 'action.hover', borderRadius: 1 }}
+                                            >
+                                                <Typography variant="body2" fontWeight="bold" sx={{ minWidth: 120 }}>
+                                                    {p.name}
+                                                </Typography>
+                                                
+                                                <Box sx={{ flexGrow: 1 }}>
+                                                    <CustomSelect
+                                                        label="Pickup Location"
+                                                        value={p.pickupPointId || ''}
+                                                        onChange={(e) => handlePassengerPickupChange(offer.id, p.id, e.target.value as number | '')}
+                                                        size="small"
+                                                        fullWidth
+                                                        disabled={p.isSaved}
+                                                    >
+                                                        <MenuItem value="">
+                                                            <em>{p.defaultAddressNickname || 'Home'} (Default)</em>
+                                                        </MenuItem>
+                                                        {pickupPoints.map(point => (
+                                                            <MenuItem key={point.id} value={point.id}>
+                                                                {point.address.nickname ? `${point.address.nickname} - ${point.address.street}` : point.address.street} {point.time ? `(${new Date(point.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})` : ''}
+                                                            </MenuItem>
+                                                        ))}
+                                                    </CustomSelect>
+                                                </Box>
+
+                                                <IconButton 
+                                                    size="small" 
+                                                    color="error"
+                                                    onClick={() => handleRemovePassenger(p.id, offer.id)}
+                                                    title="Remove Passenger"
+                                                >
+                                                    <RemoveCircleOutlineIcon fontSize="small" />
+                                                </IconButton>
+                                            </Stack>
                                         ))}
+
                                         {Array.from({ length: Math.max(0, offer.totalSeats - offer.passengers.length) }).map((_, i) => (
-                                            <Chip 
+                                            <Stack 
                                                 key={`empty-${i}`}
-                                                label="Empty"
-                                                variant="outlined"
-                                                size="small"
-                                                disabled
-                                                icon={<DirectionsCarIcon fontSize="small" />}
-                                            />
+                                                direction="row" 
+                                                alignItems="center" 
+                                                spacing={2}
+                                                sx={{ p: 1, border: '1px dashed', borderColor: 'text.disabled', borderRadius: 1 }}
+                                            >
+                                                <DirectionsCarIcon color="disabled" fontSize="small" />
+                                                <Typography variant="body2" color="text.secondary">
+                                                    Empty Seat
+                                                </Typography>
+                                            </Stack>
                                         ))}
-                                    </Box>
+                                    </Stack>
                                 </Paper>
                             ))
                         )}
@@ -454,7 +648,7 @@ export default function AllocationConsolePage() {
                         disabled={loading}
                         sx={{ minWidth: 250 }}
                     >
-                        {loading ? 'Saving...' : 'Confirm & Save Assignments'}
+                        {loading ? 'Saving...' : 'Save assignments'}
                     </Button>
                 </Box>
             )}
@@ -470,4 +664,12 @@ export default function AllocationConsolePage() {
       )}
     </PageContainer>
   );
+}
+
+export default function AllocationConsolePage() {
+    return (
+        <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''}>
+            <AllocationContent />
+        </APIProvider>
+    );
 }

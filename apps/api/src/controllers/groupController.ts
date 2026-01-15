@@ -381,16 +381,121 @@ export const updateGroup = async (req: Request, res: Response) => {
 
     
 
-        return res.json({ ok: true });
-
-      } catch (err) {
-
-        console.error('Error toggling admin status:', err);
-
-        return res.status(500).json({ error: 'Server error' });
-
-      }
-
-    };
-
+            return res.json({ ok: true });
+        
+          } catch (err) {
+        
+            console.error('Error toggling admin status:', err);
+        
+            return res.status(500).json({ error: 'Server error' });
+        
+          }
+        
+        };
+        
+        export const getGroupPickups = async (req: Request, res: Response) => {
+          try {
+            const userId = (req as any).user?.userId;
+            const groupId = Number(req.params.id);
+        
+            if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+            if (isNaN(groupId)) return res.status(400).json({ error: 'Invalid group ID' });
+        
+            // Verify membership
+            const membership = await prisma.userGroupAssociation.findUnique({
+              where: { userId_groupId: { userId, groupId } },
+            });
+            if (!membership) return res.status(403).json({ error: 'Not a member of this group' });
+        
+                const pickups = await prisma.pickup.findMany({
+                  where: {
+                    OR: [
+                      { groupId },
+                      { groupId: null }
+                    ]
+                  },
+                  include: { address: true },
+                  orderBy: { id: 'asc' }
+                });        
+            return res.json({ pickups });
+          } catch (err) {
+            console.error('Error fetching group pickups:', err);
+            return res.status(500).json({ error: 'Server error' });
+          }
+        };
+        
+        export const createGroupPickup = async (req: Request, res: Response) => {
+          try {
+            const userId = (req as any).user?.userId;
+            const groupId = Number(req.params.id);
+            const { street, city, province, postalCode, country, nickname, time, latitude, longitude, link } = req.body;
+        
+            if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+            if (isNaN(groupId)) return res.status(400).json({ error: 'Invalid group ID' });
+        
+            // Verify admin
+            const membership = await prisma.userGroupAssociation.findUnique({
+              where: { userId_groupId: { userId, groupId } },
+            });
+            if (!membership?.isAdmin) return res.status(403).json({ error: 'Only admins can add pickup points' });
+        
+                // Default time to "00:00" if not provided
+                const pickupTime = time ? new Date(time) : new Date('1970-01-01T00:00:00Z');
+            
+                const newAddress = await prisma.address.create({
+                  data: {
+                    street,
+                    city,
+                    province,
+                    postalCode,
+                    country,
+                    nickname,
+                    latitude,
+                    longitude,
+                    link
+                  }
+                });
+            
+                const pickup = await prisma.pickup.create({
+                  data: {
+                    groupId,
+                    addressId: newAddress.id,
+                    time: pickupTime,
+                    passengerCount: 0, // Template/Standard point
+                  },
+                  include: { address: true }
+                });
+            
+                return res.json({ pickup });
+              } catch (err) {            console.error('Error creating group pickup:', err);
+            return res.status(500).json({ error: 'Server error' });
+          }
+        };
+        
+        export const deleteGroupPickup = async (req: Request, res: Response) => {
+          try {
+            const userId = (req as any).user?.userId;
+            const groupId = Number(req.params.id);
+            const pickupId = Number(req.params.pickupId);
+        
+            if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+            
+            // Verify admin
+            const membership = await prisma.userGroupAssociation.findUnique({
+              where: { userId_groupId: { userId, groupId } },
+            });
+            if (!membership?.isAdmin) return res.status(403).json({ error: 'Only admins can delete pickup points' });
+        
+            // Verify pickup belongs to group
+            const pickup = await prisma.pickup.findUnique({ where: { id: pickupId } });
+            if (!pickup || pickup.groupId !== groupId) return res.status(404).json({ error: 'Pickup point not found' });
+        
+            await prisma.pickup.delete({ where: { id: pickupId } });
+        
+            return res.json({ ok: true });
+          } catch (err) {
+            console.error('Error deleting group pickup:', err);
+            return res.status(500).json({ error: 'Server error' });
+          }
+        };
     
